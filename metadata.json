@@ -1,0 +1,8 @@
+{
+  "description": "一个基于多元哲学视角的思想澄清单，在日常思论中构建内在的认知秩序。",
+  "requestFramePermissions": [],
+  "name": "澄识之径（EN）",
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

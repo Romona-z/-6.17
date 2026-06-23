@@ -1854,56 +1854,6 @@ const PhilosophicalDiary: React.FC<{
       )}
 
       {/* History - Below word selection */}
-      {step === 'word-selection' && entries.length > 0 && (
-        <section className="space-y-6 pt-10">
-          <div className="flex items-center justify-between px-2">
-            <h3 className="text-[10px] font-bold opacity-30 uppercase tracking-[0.4em]">Chronicles</h3>
-            <History size={16} className="opacity-10" />
-          </div>
-          <div className="space-y-6">
-            {entries.slice(0, 3).map(e => (
-              <div key={e.id} className="bg-white rounded-[36px] p-8 shadow-sm border border-gray-100/50 space-y-6 transition-transform hover:scale-[1.01]">
-                <div className="flex justify-between items-start border-b border-gray-50 pb-5">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                      <span className="text-[9px] font-bold opacity-30 uppercase tracking-widest">{new Date(e.date).toLocaleDateString()}</span>
-                      <div className="flex gap-2 opacity-20">
-                        {WEATHER_OPTIONS.find(o => o.id === e.weather)?.icon}
-                        {MOOD_OPTIONS.find(o => o.id === e.mood)?.icon}
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <span className="text-[9px] px-2.5 py-1 bg-gray-50 rounded-lg text-gray-400 font-bold uppercase tracking-wider">{t(e.emotion)}</span>
-                      <span className="text-[9px] px-2.5 py-1 rounded-lg font-bold uppercase tracking-wider" style={{backgroundColor: MorandiTheme.softBlue, color: MorandiTheme.blue}}>{t(e.school || '')}</span>
-                    </div>
-                  </div>
-                  <Check size={14} className="opacity-10" />
-                </div>
-
-                <div className="space-y-5">
-                  {e.selectedView && (
-                    <div className="border-l-2 pl-4 py-1" style={{borderColor: MorandiTheme.accent}}>
-                      <p className="text-[11px] italic text-gray-400 leading-relaxed font-serif">“{t(e.selectedView)}”</p>
-                    </div>
-                  )}
-                  
-                  <p className="text-[14px] leading-relaxed text-gray-600 font-serif whitespace-pre-wrap">{e.content}</p>
-                  
-                  {e.aiReflection && (
-                    <div className="p-6 rounded-[28px] border border-gray-50" style={{backgroundColor: MorandiTheme.bg + '40'}}>
-                      <div className="flex items-center gap-2 mb-3 opacity-20">
-                        <Sparkles size={10} />
-                        <span className="text-[9px] font-bold uppercase tracking-[0.2em]">Insight Reflection</span>
-                      </div>
-                      <p className="text-[13px] leading-relaxed text-gray-500 italic font-serif">“{e.aiReflection}”</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
       </div>
       )}
 

@@ -911,13 +911,15 @@ const App: React.FC = () => {
               {[
                 { id: 'selector', name: '理性决策分析表', desc: '量化利弊破，除决策迷雾', icon: <Scale size={18} /> },
                 { id: 'workplace', name: '职场生存研究', desc: '解构互动，沉淀职场法则', icon: <Briefcase size={18} /> },
-                { id: 'coming_soon', name: '更多工具，敬请期待', desc: '探索更多思维解离与重构工具', icon: <Sparkles size={18} /> }
+                { id: 'coming_soon', name: '更多工具，敬请期待', desc: '', icon: <Sparkles size={18} />, disabled: true }
               ].map(opt => {
                 const isSelected = quickToolIds.includes(opt.id);
                 return (
                   <button
                     key={opt.id}
+                    disabled={opt.disabled}
                     onClick={() => {
+                      if (opt.disabled) return;
                       if (isSelected) {
                         if (quickToolIds.length > 1) {
                           setQuickToolIds(quickToolIds.filter(id => id !== opt.id));
@@ -930,17 +932,19 @@ const App: React.FC = () => {
                         }
                       }
                     }}
-                    className={`w-full flex items-center gap-4 p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-                      isSelected 
-                        ? 'bg-purple-50/10 border-[#8A70D6] shadow-xs' 
-                        : 'bg-white hover:bg-slate-50 border-slate-100'
+                    className={`w-full flex items-center gap-4 p-4 rounded-2xl border text-left transition-all ${
+                      opt.disabled
+                        ? 'opacity-50 cursor-not-allowed bg-slate-50 border-slate-100'
+                        : isSelected 
+                          ? 'bg-purple-50/10 border-[#8A70D6] shadow-xs cursor-pointer' 
+                          : 'bg-white hover:bg-slate-50 border-slate-100 cursor-pointer'
                     }`}
                   >
                     <div 
                       className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                       style={{ 
-                        backgroundColor: isSelected ? 'rgba(138, 112, 214, 0.12)' : 'rgba(148, 163, 184, 0.08)',
-                        color: isSelected ? '#8A70D6' : '#64748B' 
+                        backgroundColor: opt.disabled ? 'rgba(148, 163, 184, 0.04)' : isSelected ? 'rgba(138, 112, 214, 0.12)' : 'rgba(148, 163, 184, 0.08)',
+                        color: opt.disabled ? '#94A3B8' : isSelected ? '#8A70D6' : '#64748B' 
                       }}
                     >
                       {opt.icon}
@@ -953,17 +957,19 @@ const App: React.FC = () => {
                         {t(opt.desc)}
                       </p>
                     </div>
-                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
-                      isSelected 
-                        ? 'border-[#8A70D6] bg-[#8A70D6] text-white' 
-                        : 'border-slate-200'
-                    }`}>
-                      {isSelected && (
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
+                    {!opt.disabled && (
+                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
+                        isSelected 
+                          ? 'border-[#8A70D6] bg-[#8A70D6] text-white' 
+                          : 'border-slate-200'
+                      }`}>
+                        {isSelected && (
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                    )}
                   </button>
                 );
               })}
@@ -1412,7 +1418,7 @@ const PhilosophicalDiary: React.FC<{
             {[
               { id: 'selector', name: '理性决策分析表', desc: '量化利弊破，除决策迷雾', icon: <Scale size={20} strokeWidth={2.2} />, color: '#8A70D6', bgColor: 'rgba(138, 112, 214, 0.08)' },
               { id: 'workplace', name: '职场生存研究', desc: '解构互动，沉淀职场法则', icon: <Briefcase size={20} strokeWidth={2.2} />, color: '#9C82CB', bgColor: 'rgba(156, 130, 203, 0.08)' },
-              { id: 'coming_soon', name: '更多工具，敬请期待', desc: '探索更多思维解离与重构工具', icon: <Sparkles size={20} strokeWidth={2.2} />, color: '#64748B', bgColor: 'rgba(100, 116, 139, 0.08)', disabled: true }
+              { id: 'coming_soon', name: '更多工具，敬请期待', desc: '', icon: <Sparkles size={20} strokeWidth={2.2} />, color: '#64748B', bgColor: 'rgba(100, 116, 139, 0.08)', disabled: true }
             ].filter(tool => quickToolIds.includes(tool.id)).map(tool => {
               if (tool.disabled) {
                 return (
@@ -2070,7 +2076,6 @@ const Toolbox: React.FC<{ onSelectTool: (t: ToolType) => void, onOpenSettings?: 
           </div>
           <div className="flex-1">
             <h4 className="font-bold text-base text-slate-500">{t('更多工具，敬请期待')}</h4>
-            <p className="text-xs text-slate-400 mt-1 font-medium">{t('探索更多思维解离与重构工具')}</p>
           </div>
         </div>
       </div>
@@ -2559,6 +2564,7 @@ const UserCenter: React.FC<{
     const quoteInfo = selectedEntry.selectedView ? QUOTE_EXPLANATIONS[selectedEntry.selectedView] : null;
 
     const [isEditing, setIsEditing] = React.useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
     const [editContent, setEditContent] = React.useState(selectedEntry.content);
     const [editWeather, setEditWeather] = React.useState(selectedEntry.weather);
     const [editMood, setEditMood] = React.useState(selectedEntry.mood);
@@ -2569,6 +2575,7 @@ const UserCenter: React.FC<{
         setEditWeather(selectedEntry.weather);
         setEditMood(selectedEntry.mood);
         setIsEditing(false);
+        setShowDeleteConfirm(false);
       }
     }, [selectedEntry.id]);
 
@@ -2598,15 +2605,61 @@ const UserCenter: React.FC<{
             <h2 className="text-xl font-bold opacity-70">{t('思辨详情')}</h2>
           </div>
           {!isEditing && (
-            <button 
-              onClick={() => setIsEditing(true)} 
-              className="flex items-center gap-2 px-4 py-2 rounded-full border border-gray-100 hover:bg-gray-50 active:scale-95 transition-all text-[11px] font-bold tracking-widest text-gray-500 uppercase shadow-sm bg-white"
-            >
-              <PenLine size={13} />
-              {t('编辑内容')}
-            </button>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setIsEditing(true)} 
+                title={t('编辑内容')}
+                className="w-8 h-8 rounded-full border border-gray-100 hover:bg-gray-50 active:scale-95 transition-all text-gray-500 shadow-sm bg-white flex items-center justify-center"
+              >
+                <PenLine size={14} />
+              </button>
+              <button 
+                onClick={() => setShowDeleteConfirm(true)} 
+                title={t('删除日记')}
+                className="w-8 h-8 rounded-full border border-red-100/60 hover:bg-red-50 text-red-500 active:scale-95 transition-all shadow-sm bg-white flex items-center justify-center"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
           )}
         </div>
+
+        {/* Delete Confirmation Floating Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-[36px] max-w-sm w-full p-8 space-y-6 shadow-2xl border border-gray-100 animate-in zoom-in-95 duration-200">
+              <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-red-500 mx-auto">
+                <Trash2 size={24} />
+              </div>
+              <div className="space-y-2 text-center">
+                <h3 className="font-bold text-lg text-gray-800">
+                  {t('确定删除这篇日记吗？')}
+                </h3>
+                <p className="text-xs text-gray-400 leading-relaxed">
+                  {t('删除后，对应的思辨足迹和心境状态将无法恢复。')}
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 py-3 text-gray-500 bg-gray-50 hover:bg-gray-100 rounded-2xl font-bold text-[11px] tracking-wider uppercase active:scale-95 transition-all text-center"
+                >
+                  {t('取消')}
+                </button>
+                <button
+                  onClick={() => {
+                    setEntries(prev => prev.filter(e => e.id !== selectedEntry.id));
+                    setShowDeleteConfirm(false);
+                    setView('archive');
+                  }}
+                  className="flex-1 py-3 text-white bg-red-500 hover:bg-red-600 rounded-2xl font-bold text-[11px] tracking-wider uppercase active:scale-95 transition-all text-center shadow-lg shadow-red-500/10"
+                >
+                  {t('确认删除')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="bg-white rounded-[44px] shadow-xl border border-gray-50 overflow-hidden">
           {/* Top Info Bar */}
@@ -3769,7 +3822,7 @@ ${entriesInSchool.length > 0 ? `他们记录过的感悟有：\n${entriesInSchoo
                   : 'text-slate-400 hover:text-slate-600'
               }`}
             >
-              {lang === 'zh' ? '意识地图' : 'Consciousness Map'}
+              {lang === 'zh' ? '心境地图' : 'Consciousness Map'}
             </button>
           </div>
         </div>
@@ -4149,7 +4202,7 @@ ${entriesInSchool.length > 0 ? `他们记录过的感悟有：\n${entriesInSchoo
                 <div className="space-y-5 text-slate-600 text-[10.5px]">
                   <div>
                     <h5 className="font-sans font-bold text-slate-800 text-[11px] mb-1.5 flex items-center gap-1.5 text-[#8A70D6]">
-                      <span>✦</span> 关于意识地图与霍金斯层级
+                      <span>✦</span> 关于心境地图与霍金斯层级
                     </h5>
                     <p className="leading-relaxed font-sans font-medium text-slate-500">
                       这张图背后，是美国精神病学家大卫·霍金斯（David R. Hawkins）跨越30年的研究。
@@ -4192,7 +4245,7 @@ ${entriesInSchool.length > 0 ? `他们记录过的感悟有：\n${entriesInSchoo
                       <span>✦</span> 和澄识之径的关系
                     </h5>
                     <p className="leading-relaxed font-sans font-medium text-slate-500">
-                      你的每一篇日记，都在意识地图上留下了一个坐标。我们不会用情绪的好坏来评判你——焦虑(100)和快乐(540)同样是你真实的瞬间。你看见它，它就已经开始松动。
+                      你的每一篇日记，都在心境地图上留下了一个坐标。我们不会用情绪的好坏来评判你——焦虑(100)和快乐(540)同样是你真实的瞬间。你看见它，它就已经开始松动。
                     </p>
                   </div>
                 </div>
@@ -4342,7 +4395,7 @@ ${entriesInSchool.length > 0 ? `他们记录过的感悟有：\n${entriesInSchoo
             {/* Nickname Input Section */}
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 tracking-widest uppercase font-sans">
-                {lang === 'zh' ? '你的专属昵称' : 'Personal Nickname'}
+                {lang === 'zh' ? '你想被如何称呼' : 'Personal Nickname'}
               </label>
               <div className="relative">
                 <input 
@@ -4365,7 +4418,7 @@ ${entriesInSchool.length > 0 ? `他们记录过的感悟有：\n${entriesInSchoo
             {/* Avatar Select Section */}
             <div className="space-y-2.5">
               <label className="text-[10px] font-black text-slate-400 tracking-widest uppercase font-sans">
-                {lang === 'zh' ? '选择心灵印记' : 'Choose Your Icon'}
+                {lang === 'zh' ? '选择头像' : 'Choose Your Icon'}
               </label>
 
               <div className="grid grid-cols-3 gap-3">

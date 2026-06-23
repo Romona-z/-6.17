@@ -272,7 +272,7 @@ const LifeSelector: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const isProblemStep = activeView === 'wizard' && !selectedHistoryItem && currentStep === Step.PROBLEM;
 
   return (
-    <div className="w-full h-full flex flex-col md:flex-row bg-[#F3F4F8] text-[#4A5568] font-sans overflow-hidden relative">
+    <div className="w-full min-h-screen flex flex-col md:flex-row bg-[#F3F4F8] text-[#4A5568] font-sans relative">
       {/* Mobile Header (Always visible on mobile to host the hamburger toggle) */}
       <header className="md:hidden flex items-center justify-between px-6 py-4 bg-white/85 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30 w-full shrink-0">
         <div className="flex items-center gap-3">
@@ -304,8 +304,8 @@ const LifeSelector: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       </header>
 
       {/* Main Workspace Frame */}
-      <div className={`flex-1 overflow-y-auto min-h-0 flex flex-col items-center pt-6 px-4 max-w-4xl mx-auto w-full md:px-8 md:order-last ${
-        isProblemStep ? 'pb-24' : 'pb-40'
+      <div className={`flex-1 min-h-0 flex flex-col items-center pt-6 px-4 max-w-4xl mx-auto w-full md:px-8 md:order-last ${
+        isProblemStep ? 'pb-24' : 'pb-52'
       }`}>
         {selectedHistoryItem ? (
           renderSelectedHistoryItem()
@@ -501,6 +501,9 @@ const LifeSelector: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 />
               )}
             </main>
+
+            {/* Solid uncollapsible spacer block to ensure the bottommost elements of Step 3 (like Option B's cost list) can scroll completely above the fixed action footer */}
+            <div className="h-44 w-full shrink-0" />
 
             {/* Pinned Bottom Interactive Bar */}
             <footer className="fixed bottom-0 left-0 right-0 md:left-60 bg-white/80 backdrop-blur-xl border-t border-slate-200/50 shadow-2xl z-30 py-4 px-6 md:px-12 transition-all">

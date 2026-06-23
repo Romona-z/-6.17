@@ -242,11 +242,26 @@ export const calculateExperienceFromTraces = (
 
   // Achievement bonuses: +30 EXP per unlocked badge
   const diaryCount = diaryEntries.length;
+  let selectorCount = 0;
+  try {
+    const saved = localStorage.getItem('life_selector_history');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) selectorCount = parsed.length;
+    }
+  } catch (e) {}
+
+  const hasLongDiary = diaryEntries.some(e => e.content && e.content.length > 100);
+
   const badgesCount = [
     diaryCount >= 1,
+    selectorCount >= 1,
+    diaryCount >= 3,
     diaryCount >= 5,
+    diaryCount >= 8,
+    diaryCount >= 10,
     Object.keys(schoolStats).length >= 3,
-    diaryCount >= 10
+    hasLongDiary
   ].filter(Boolean).length;
 
   const achievementExp = badgesCount * 30; // Achievement bonus (+30 XP per badge)
@@ -858,8 +873,10 @@ const App: React.FC = () => {
     }
   };
 
+  const isScrollLocked = activeTool !== 'none' && activeTool !== 'selector';
+
   return (
-    <div className={`flex flex-col font-sans select-none ${activeTool !== 'none' ? 'h-screen overflow-hidden' : 'min-h-screen'}`} style={{ backgroundColor: MorandiTheme.bg, color: MorandiTheme.ink }}>
+    <div className={`flex flex-col font-sans select-none ${isScrollLocked ? 'h-screen overflow-hidden' : 'min-h-screen'}`} style={{ backgroundColor: MorandiTheme.bg, color: MorandiTheme.ink }}>
       {activeTool !== 'workplace' && activeTool !== 'selector' && (
         <header className="p-6 pt-12 flex items-center justify-between border-b border-gray-100 bg-[#FFFFFF]/70 backdrop-blur-md z-10">
           <div>
@@ -884,7 +901,7 @@ const App: React.FC = () => {
           </div>
         </header>
       )}
-      <main className={`flex-1 ${activeTool === 'none' ? 'overflow-y-auto pb-24' : 'overflow-hidden flex flex-col h-full'}`}>{renderContent()}</main>
+      <main className={`flex-1 ${activeTool === 'none' ? 'overflow-y-auto pb-24' : isScrollLocked ? 'h-full w-full overflow-hidden flex flex-col' : 'w-full flex flex-col'}`}>{renderContent()}</main>
       {activeTool === 'none' && (
         <nav className="fixed bottom-0 left-0 right-0 h-20 bg-white/90 backdrop-blur-lg border-t border-gray-100 flex items-center justify-around px-4 z-20">
           <NavButton active={activeTab === 'home'} icon={<BookOpen size={24} />} label={t("主页")} onClick={() => setActiveTab('home')} />
@@ -2241,6 +2258,22 @@ const UserCenter: React.FC<{
   const [showHawkinsInfo, setShowHawkinsInfo] = useState(false);
   const [clickedDot, setClickedDot] = useState<any>(null);
 
+  // States for milestones/badges customization
+  const [showcaseBadgeIds, setShowcaseBadgeIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('selected_showcase_badges_v2');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length >= 1 && parsed.length <= 4) {
+          return parsed;
+        }
+      }
+    } catch (e) {}
+    return ['1', '2', '3', '4'];
+  });
+  const [showAchievementsModal, setShowAchievementsModal] = useState(false);
+  const [tempShowcaseBadgeIds, setTempShowcaseBadgeIds] = useState<string[]>([]);
+
   useEffect(() => {
     window.scrollTo(0, 0);
     const mainEl = document.querySelector('main');
@@ -2404,12 +2437,35 @@ const UserCenter: React.FC<{
     return { days };
   }, [entries, userMoodSelected, lang, t]);
 
-  const badges: Badge[] = [
+  const selectorEntriesLength = useMemo(() => {
+    try {
+      const saved = localStorage.getItem('life_selector_history');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed.length;
+      }
+    } catch (e) {}
+    return 0;
+  }, [entries]);
+
+  const hasLongDiary = useMemo(() => {
+    return entries.some(e => e.content && e.content.length > 100);
+  }, [entries]);
+
+  const badges: Badge[] = useMemo(() => [
     { id: '1', name: t('破晓行者'), description: t('完成第1篇哲学日记'), icon: <Compass />, unlocked: diaryCount >= 1 },
-    { id: '2', name: t('深度思辨'), description: t('累计5篇哲学日记'), icon: <BookOpen />, unlocked: diaryCount >= 5 },
-    { id: '3', name: t('秩序守护'), description: t('探索过3个哲学流派'), icon: <Award />, unlocked: Object.keys(schoolStats).length >= 3 },
-    { id: '4', name: t('格物大师'), description: t('常用工具辅助思考'), icon: <Scale />, unlocked: diaryCount >= 10 },
-  ];
+    { id: '2', name: t('理性先锋'), description: t('评估生命决策利弊 1 次'), icon: <Zap />, unlocked: selectorEntriesLength >= 1 },
+    { id: '3', name: t('成长之萌'), description: t('累计打卡 3 次哲学日记'), icon: <Sprout />, unlocked: diaryCount >= 3 },
+    { id: '4', name: t('深度思辨'), description: t('累计撰写 5 篇哲学日记'), icon: <BookOpen />, unlocked: diaryCount >= 5 },
+    { id: '5', name: t('见微知著'), description: t('累计进行 8 次心情探究'), icon: <Heart />, unlocked: diaryCount >= 8 },
+    { id: '6', name: t('格物大成'), description: t('累计撰写 10 篇哲学日记'), icon: <Scale />, unlocked: diaryCount >= 10 },
+    { id: '7', name: t('思维重构'), description: t('探索过 3 个哲学流派'), icon: <Award />, unlocked: Object.keys(schoolStats).length >= 3 },
+    { id: '8', name: t('见字如面'), description: t('随笔字数超过 100 字 1 次'), icon: <Feather />, unlocked: hasLongDiary },
+  ], [diaryCount, selectorEntriesLength, schoolStats, hasLongDiary, t]);
+
+  const showcasedBadges = useMemo(() => {
+    return showcaseBadgeIds.map(id => badges.find(b => b.id === id)).filter(Boolean) as Badge[];
+  }, [showcaseBadgeIds, badges]);
 
   const filteredEntries = useMemo(() => {
     if (activeFilter.type === 'all') return entries;
@@ -4286,7 +4342,6 @@ ${entriesInSchool.length > 0 ? `他们记录过的感悟有：\n${entriesInSchoo
       <section className="space-y-5">
         <div className="flex items-center justify-between px-2">
            <h3 className="text-[10px] font-bold opacity-30 uppercase tracking-[0.4em]">{t('最近足迹')}</h3>
-           <Calendar size={14} className="opacity-10" />
         </div>
         <div className="space-y-4">
           {entries.length === 0 ? (
@@ -4317,19 +4372,28 @@ ${entriesInSchool.length > 0 ? `他们记录过的感悟有：\n${entriesInSchoo
         </div>
       </section>
 
-      {/* Achievements (Badges) */}
+      {/* Achievements (Badges / Milestones) */}
       <section className="space-y-5">
         <div className="flex items-center justify-between px-2">
-           <h3 className="text-[10px] font-bold opacity-30 uppercase tracking-[0.4em]">{t('勋衔馆')}</h3>
-           <Award size={14} className="opacity-10" />
+           <h3 className="text-[10px] font-bold opacity-30 uppercase tracking-[0.4em]">{t('里程碑')}</h3>
+           <button 
+             onClick={() => {
+               setTempShowcaseBadgeIds(showcaseBadgeIds);
+               setShowAchievementsModal(true);
+             }}
+             className="w-7 h-7 rounded-xl bg-slate-50 hover:bg-[#8A70D6]/10 flex items-center justify-center text-slate-400 hover:text-[#8A70D6] transition-all cursor-pointer hover:scale-105 active:scale-95 border border-slate-100"
+             title={t('成果展示设置')}
+           >
+             <Award size={13} strokeWidth={2.4} />
+           </button>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          {badges.map(badge => (
-            <div key={badge.id} className={`p-6 rounded-[36px] border flex flex-col items-center text-center space-y-4 transition-all relative ${badge.unlocked ? 'bg-white shadow-sm border-gray-50' : 'grayscale opacity-10 border-transparent'}`}>
-              <div className="absolute top-4 right-4 text-[7px] px-1.5 py-0.5 rounded-full font-sans font-bold tracking-wider" style={{ backgroundColor: `${MorandiTheme.purple}10`, color: MorandiTheme.purple }}>
-                +30 EXP
+        <div className={`grid gap-4 ${showcasedBadges.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+          {showcasedBadges.map(badge => (
+            <div key={badge.id} className={`p-6 rounded-[36px] border flex flex-col items-center text-center space-y-4 transition-all relative ${badge.unlocked ? 'bg-white shadow-sm border-gray-50' : 'grayscale opacity-10 border-transparent bg-slate-50/20'}`}>
+              <div className="absolute top-4 right-4 text-[7px] px-1.5 py-0.5 rounded-full font-sans font-bold tracking-wider" style={{ backgroundColor: badge.unlocked ? `${MorandiTheme.purple}10` : '#F1F3F7', color: badge.unlocked ? MorandiTheme.purple : '#95A5A6' }}>
+                {badge.unlocked ? '+30 EXP' : t('未解锁')}
               </div>
-              <div className={`p-4 rounded-2xl ${badge.unlocked ? 'bg-morandi-soft-purple' : 'bg-gray-100'}`} style={{backgroundColor: badge.unlocked ? MorandiTheme.softPurple : '', color: badge.unlocked ? MorandiTheme.purple : 'inherit'}}>
+              <div className={`p-4 rounded-2xl ${badge.unlocked ? 'bg-morandi-soft-purple text-[#8A70D6]' : 'bg-gray-100 text-gray-400'}`} style={{backgroundColor: badge.unlocked ? MorandiTheme.softPurple : ''}}>
                 {React.cloneElement(badge.icon as React.ReactElement, { size: 24 })}
               </div>
               <div className="space-y-1">
@@ -4537,6 +4601,126 @@ ${entriesInSchool.length > 0 ? `他们记录过的感悟有：\n${entriesInSchoo
             >
               {lang === 'zh' ? '返回' : 'Back'}
             </button>
+          </div>
+        </div>
+      )}
+
+      {showAchievementsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white rounded-[40px] p-6 sm:p-8 max-w-lg w-full shadow-2xl relative text-left flex flex-col gap-5 animate-in zoom-in-95 duration-300 max-h-[85vh] overflow-y-auto scrollbar-thin">
+            <div className="absolute top-0 left-0 w-full h-1.5" style={{ background: `linear-gradient(to right, ${MorandiTheme.purple}, ${MorandiTheme.blue})` }} />
+            
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <h3 className="text-base font-bold text-slate-800 tracking-tight font-sans">
+                  {t('我的里程碑')}
+                </h3>
+                <p className="text-[10px] text-gray-400 font-medium">
+                  {t('自主选择 1 到 4 个已解锁或心仪的成就展示于成长主页')}
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowAchievementsModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-all cursor-pointer focus:outline-none shrink-0"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Grid of 8 achievements */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[45vh] overflow-y-auto pr-1">
+              {badges.map((badge) => {
+                const isSelected = tempShowcaseBadgeIds.includes(badge.id);
+                return (
+                  <button
+                    key={badge.id}
+                    onClick={() => {
+                      setTempShowcaseBadgeIds(prev => {
+                        if (prev.includes(badge.id)) {
+                          return prev.filter(x => x !== badge.id);
+                        } else {
+                          if (prev.length >= 4) {
+                            return [...prev.slice(1), badge.id];
+                          }
+                          return [...prev, badge.id];
+                        }
+                      });
+                    }}
+                    className={`p-4 rounded-3xl border text-left flex flex-col items-start gap-3 transition-all cursor-pointer relative group ${
+                      isSelected 
+                        ? 'bg-[#8A70D6]/5 border-[#8A70D6] shadow-[0_4px_16px_rgba(138,112,214,0.06)]' 
+                        : 'bg-slate-50/50 border-slate-100 hover:border-slate-200 hover:bg-white'
+                    }`}
+                  >
+                    {/* Top Status */}
+                    <div className="w-full flex items-center justify-between">
+                      <span className={`text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                        badge.unlocked 
+                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-100/50' 
+                          : 'bg-slate-100 text-slate-400 border border-slate-200'
+                      }`}>
+                        {badge.unlocked ? t('已解锁') : t('未解锁')}
+                      </span>
+
+                      {/* Tick circle */}
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all border ${
+                        isSelected 
+                          ? 'bg-[#8A70D6] border-[#8A70D6] text-white scale-105' 
+                          : 'bg-white border-slate-200 text-transparent'
+                      }`}>
+                        <Check size={10} strokeWidth={4} />
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex gap-3 items-center w-full">
+                      <div className={`p-2.5 rounded-xl shrink-0 ${badge.unlocked ? 'bg-morandi-soft-purple text-[#8A70D6]' : 'bg-gray-100 text-gray-400'}`} style={{backgroundColor: badge.unlocked ? MorandiTheme.softPurple : ''}}>
+                        {React.cloneElement(badge.icon as React.ReactElement, { size: 18 })}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[11px] font-bold text-slate-800 truncate">{badge.name}</p>
+                        <p className="text-[8px] text-slate-400 font-medium leading-tight mt-0.5">{badge.description}</p>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Validation warning or counter */}
+            <div className={`p-3 rounded-2xl text-center border transition-all ${tempShowcaseBadgeIds.length === 0 ? 'bg-amber-50 border-amber-100 text-amber-700 font-medium' : 'bg-slate-50 border-slate-100 text-slate-500 font-medium'}`}>
+              <p className="text-[10px]">
+                {tempShowcaseBadgeIds.length === 0 
+                  ? (lang === 'zh' ? '⚠️ 请至少选择 1 个心仪或已解锁的里程碑展示' : '⚠️ Please select at least 1 milestone to display')
+                  : (lang === 'zh' ? `✨ 已选中 ${tempShowcaseBadgeIds.length} 个里程碑（最多可选 4 个）` : `✨ Selected ${tempShowcaseBadgeIds.length} milestones (choose up to 4)`)}
+              </p>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex gap-3 mt-2">
+              <button
+                onClick={() => setShowAchievementsModal(false)}
+                className="flex-1 py-3 border border-gray-150 hover:bg-slate-50 text-slate-500 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all active:scale-95 cursor-pointer text-center"
+              >
+                {lang === 'zh' ? '取消' : 'Cancel'}
+              </button>
+              <button
+                onClick={() => {
+                  if (tempShowcaseBadgeIds.length >= 1 && tempShowcaseBadgeIds.length <= 4) {
+                    setShowcaseBadgeIds(tempShowcaseBadgeIds);
+                    try {
+                      localStorage.setItem('selected_showcase_badges_v2', JSON.stringify(tempShowcaseBadgeIds));
+                    } catch (e) {}
+                    setShowAchievementsModal(false);
+                  }
+                }}
+                disabled={tempShowcaseBadgeIds.length === 0 || tempShowcaseBadgeIds.length > 4}
+                className="flex-1 py-3 text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all active:scale-95 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-center"
+                style={{ backgroundColor: MorandiTheme.blue }}
+              >
+                {lang === 'zh' ? '保存设置' : 'Save Settings'}
+              </button>
+            </div>
           </div>
         </div>
       )}

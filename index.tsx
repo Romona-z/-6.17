@@ -3378,73 +3378,85 @@ ${entriesInSchool.length > 0 ? `他们记录过的感悟有：\n${entriesInSchoo
               </div>
             </div>
 
-            <div className="lg:col-span-5 bg-gray-50/40 border border-gray-100/60 rounded-[32px] p-6 space-y-6 flex flex-col justify-between text-left">
-              <div>
-                <span className="text-[9px] font-bold uppercase tracking-widest text-gray-400 block mb-4">{t('决策数据档案')}</span>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1 bg-white p-4 rounded-2xl shadow-xs border border-gray-105/30">
-                    <span className="text-[9px] opacity-45 font-bold block">{t('最近一月决策')}</span>
-                    <span className="text-xl font-bold opacity-80">{selectorLast30DaysCount} {t('次')}</span>
-                  </div>
-                  <div className="space-y-1 bg-white p-4 rounded-2xl shadow-xs border border-gray-105/30">
-                    <span className="text-[9px] opacity-45 font-bold block">{t('最看重维度')}</span>
-                    <span className="text-xl font-bold opacity-80 text-morandi-blue truncate" style={{ color: MorandiTheme.blue }}>
-                      {topDimension ? t(topDimension) : t('暂无评估')}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="bg-white p-4 rounded-2xl shadow-xs border border-gray-105/30 mt-4 space-y-1.5">
-                  <span className="text-[9px] opacity-45 font-bold block">{t('最近一次决策命题')}</span>
-                  <p className="text-xs font-bold leading-relaxed text-gray-700 line-clamp-2">
-                    {lastDecisionProblem ? `“${lastDecisionProblem}”` : t('尚未开启首个决策命题')}
+            <div className="lg:col-span-5 space-y-6 flex flex-col">
+              {/* Theoretical Grounding */}
+              <div className="bg-white p-5 rounded-[28px] border border-gray-100/50 shadow-xs text-left">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-[#8A70D6] uppercase tracking-widest block">{t('理论模型支持')}</span>
+                  <p className="text-xs text-slate-500 leading-relaxed font-sans font-medium">
+                    {t('本工具基于决策科学中的')} <strong className="text-slate-800 font-bold">{t('多属性效用理论 (Multi-Attribute Utility Theory, MAUT)')}</strong>{t('。通过将复杂的决策命题拆解为具体的“价值维度”（属性）并分配“主观权重”，结合对各个利弊的客观测度，用数学加权的方法算出整体决策效用。这是一种公认具有深度科学依据的理性决策模型。')}
                   </p>
                 </div>
               </div>
 
-              {/* Unique Trend Line Chart with Recharts */}
-              <div className="space-y-2 mt-2 pt-2 border-t border-gray-100/50">
-                <span className="text-[8.5px] font-bold uppercase tracking-widest text-gray-400 block text-center sm:text-left">
-                  {t('内在核心关注点演化趋势 (限最近8次)')}
-                </span>
-                
-                {selectorEntries.length >= 2 ? (
-                  <div className="h-36 w-full text-xs opacity-80 pt-1">
-                    <ResponsiveContainer width="100%" height="86%">
-                      <LineChart data={selectorTrendData} margin={{ top: 5, right: 10, left: -25, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E9F0" />
-                        <XAxis dataKey="label" stroke="#A393A3" fontSize={9} />
-                        <YAxis tickCount={5} domain={[0, 5]} stroke="#A393A3" fontSize={9} />
-                        <ChartTooltip />
-                        {uniqueDimensionsPlotted.map((dim, i) => (
-                          <Line 
-                            key={dim}
-                            type="monotone" 
-                            dataKey={dim} 
-                            stroke={getDimensionColor(dim, i)} 
-                            strokeWidth={2}
-                            dot={{ r: 2.5 }}
-                            activeDot={{ r: 5 }}
-                          />
-                        ))}
-                      </LineChart>
-                    </ResponsiveContainer>
-                    <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-1 text-[8.5px] font-bold text-gray-400">
-                      {uniqueDimensionsPlotted.map((dim, i) => (
-                        <div key={dim} className="flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: getDimensionColor(dim, i) }} />
-                          <span>{dim}</span>
-                        </div>
-                      ))}
+              <div className="flex-1 bg-gray-50/40 border border-gray-100/60 rounded-[32px] p-6 space-y-6 flex flex-col justify-between text-left">
+                <div>
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-gray-400 block mb-4">{t('决策数据档案')}</span>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1 bg-white p-4 rounded-2xl shadow-xs border border-gray-105/30">
+                      <span className="text-[9px] opacity-45 font-bold block">{t('最近一月决策')}</span>
+                      <span className="text-xl font-bold opacity-80">{selectorLast30DaysCount} {t('次')}</span>
+                    </div>
+                    <div className="space-y-1 bg-white p-4 rounded-2xl shadow-xs border border-gray-105/30">
+                      <span className="text-[9px] opacity-45 font-bold block">{t('最看重维度')}</span>
+                      <span className="text-xl font-bold opacity-80 text-morandi-blue truncate" style={{ color: MorandiTheme.blue }}>
+                        {topDimension ? t(topDimension) : t('暂无评估')}
+                      </span>
                     </div>
                   </div>
-                ) : (
-                  <div className="h-28 bg-white/60 rounded-2xl flex items-center justify-center p-4 border border-dashed border-gray-200">
-                    <p className="text-[9.5px] text-gray-400 text-center leading-relaxed">
-                      {t('🍁 完成 2 次决策后')}<br />{t('系统将自动绘制“内在天平维度权重”的变化趋势图')}
+
+                  <div className="bg-white p-4 rounded-2xl shadow-xs border border-gray-105/30 mt-4 space-y-1.5">
+                    <span className="text-[9px] opacity-45 font-bold block">{t('最近一次决策命题')}</span>
+                    <p className="text-xs font-bold leading-relaxed text-gray-700 line-clamp-2">
+                      {lastDecisionProblem ? `“${lastDecisionProblem}”` : t('尚未开启首个决策命题')}
                     </p>
                   </div>
-                )}
+                </div>
+
+                {/* Unique Trend Line Chart with Recharts */}
+                <div className="space-y-2 mt-2 pt-2 border-t border-gray-100/50">
+                  <span className="text-[8.5px] font-bold uppercase tracking-widest text-gray-400 block text-center sm:text-left">
+                    {t('内在核心关注点演化趋势 (限最近8次)')}
+                  </span>
+                  
+                  {selectorEntries.length >= 2 ? (
+                    <div className="h-36 w-full text-xs opacity-80 pt-1">
+                      <ResponsiveContainer width="100%" height="86%">
+                        <LineChart data={selectorTrendData} margin={{ top: 5, right: 10, left: -25, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E9F0" />
+                          <XAxis dataKey="label" stroke="#A393A3" fontSize={9} />
+                          <YAxis tickCount={5} domain={[0, 5]} stroke="#A393A3" fontSize={9} />
+                          <ChartTooltip />
+                          {uniqueDimensionsPlotted.map((dim, i) => (
+                            <Line 
+                              key={dim}
+                              type="monotone" 
+                              dataKey={dim} 
+                              stroke={getDimensionColor(dim, i)} 
+                              strokeWidth={2}
+                              dot={{ r: 2.5 }}
+                              activeDot={{ r: 5 }}
+                            />
+                          ))}
+                        </LineChart>
+                      </ResponsiveContainer>
+                      <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-1 text-[8.5px] font-bold text-gray-400">
+                        {uniqueDimensionsPlotted.map((dim, i) => (
+                          <div key={dim} className="flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: getDimensionColor(dim, i) }} />
+                            <span>{dim}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="h-28 bg-white/60 rounded-2xl flex items-center justify-center p-4 border border-dashed border-gray-200">
+                      <p className="text-[9.5px] text-gray-400 text-center leading-relaxed">
+                        {t('🍁 完成 2 次决策后')}<br />{t('系统将自动绘制“内在天平维度权重”的变化趋势图')}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

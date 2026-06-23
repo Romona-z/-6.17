@@ -1771,33 +1771,37 @@ const PhilosophicalDiary: React.FC<{
           <div className="bg-white rounded-[44px] shadow-2xl relative min-h-[620px] border border-gray-50 p-8 md:p-12 flex flex-col space-y-6 overflow-hidden">
             
             {/* Top Row: Left Aligned Icons */}
-            <div className="flex items-center justify-start gap-3 sm:gap-4 pb-2">
-              <div className="flex gap-2 sm:gap-3">
-                {WEATHER_OPTIONS.map(opt => (
-                  <button 
-                    key={opt.id} 
-                    onClick={() => setWeather(opt.id)}
-                    className={`transition-all duration-300 p-1.5 sm:p-2 rounded-xl flex items-center justify-center ${weather === opt.id ? 'bg-gray-50 shadow-sm opacity-100 scale-125' : 'opacity-10 hover:opacity-30'}`}
-                    style={{ color: weather === opt.id ? MorandiTheme.blue : 'inherit' }}
-                  >
-                    {opt.icon}
-                  </button>
-                ))}
+            <div className="flex flex-col gap-3 pb-2 text-left">
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest w-10 shrink-0">{t("天气")}</span>
+                <div className="flex gap-2 sm:gap-3">
+                  {WEATHER_OPTIONS.map(opt => (
+                    <button 
+                      key={opt.id} 
+                      onClick={() => setWeather(opt.id)}
+                      className={`transition-all duration-300 p-1.5 md:p-2 rounded-xl flex items-center justify-center ${weather === opt.id ? 'bg-gray-50 shadow-sm opacity-100 scale-125' : 'opacity-15 hover:opacity-45'}`}
+                      style={{ color: weather === opt.id ? MorandiTheme.blue : 'inherit' }}
+                    >
+                      {opt.icon}
+                    </button>
+                  ))}
+                </div>
               </div>
               
-              <div className="w-[1.5px] h-4 bg-gray-100 mx-1" />
-              
-              <div className="flex gap-2 sm:gap-3">
-                {MOOD_OPTIONS.map(opt => (
-                  <button 
-                    key={opt.id} 
-                    onClick={() => setMood(opt.id)}
-                    className={`transition-all duration-300 p-1.5 sm:p-2 rounded-xl flex items-center justify-center ${mood === opt.id ? 'bg-gray-50 shadow-sm opacity-100 scale-125' : 'opacity-10 hover:opacity-30'}`}
-                    style={{ color: mood === opt.id ? MorandiTheme.purple : 'inherit' }}
-                  >
-                    {opt.icon}
-                  </button>
-                ))}
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest w-10 shrink-0">{t("心情")}</span>
+                <div className="flex gap-2 sm:gap-3">
+                  {MOOD_OPTIONS.map(opt => (
+                    <button 
+                      key={opt.id} 
+                      onClick={() => setMood(opt.id)}
+                      className={`transition-all duration-300 p-1.5 md:p-2 rounded-xl flex items-center justify-center ${mood === opt.id ? 'bg-gray-50 shadow-sm opacity-100 scale-125' : 'opacity-15 hover:opacity-45'}`}
+                      style={{ color: mood === opt.id ? MorandiTheme.purple : 'inherit' }}
+                    >
+                      {opt.icon}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -1819,7 +1823,7 @@ const PhilosophicalDiary: React.FC<{
             {/* Textarea - Left aligned for natural writing */}
             <textarea 
               className="flex-1 w-full bg-transparent resize-none focus:outline-none text-lg leading-relaxed placeholder:text-gray-400/80 text-gray-700 font-serif text-left pt-2"
-              placeholder={t("此处留白，供你构建秩序...")}
+              placeholder={t("现在，你在想什么？")}
               autoFocus 
               value={content} 
               onChange={(e) => setContent(e.target.value)}
@@ -1847,7 +1851,7 @@ const PhilosophicalDiary: React.FC<{
               disabled={isLoading || !content.trim()} 
               className="px-12 py-3.5 rounded-full bg-gray-800 text-white font-bold tracking-[0.3em] shadow-md hover:bg-black active:scale-[0.96] disabled:opacity-20 transition-all flex items-center justify-center gap-3 text-[11px] uppercase animate-in duration-200"
             >
-              {isLoading ? <div className="animate-spin rounded-full h-3 w-3 border-2 border-white/20 border-t-white" /> : t("建立秩序")}
+              {isLoading ? <div className="animate-spin rounded-full h-3 w-3 border-2 border-white/20 border-t-white" /> : t("保存现在")}
             </button>
           </div>
         </section>

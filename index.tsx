@@ -49,7 +49,11 @@ import {
   Settings,
   Bell,
   X,
-  Info
+  Info,
+  Users,
+  Feather,
+  MessageSquare,
+  Sprout
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 import WorkplaceSurvival from './workplace-survival/WorkplaceSurvival';
@@ -98,6 +102,218 @@ const MorandiTheme = {
   border: '#E8E3F2',     // Extremely subtle lavender border lines
   softBlue: 'rgba(138, 112, 214, 0.08)',
   softPurple: 'rgba(156, 130, 203, 0.1)'
+};
+
+const AVATAR_OPTIONS = [
+  { id: 'user', iconName: 'User', bg: 'bg-[#EDEBEF]', border: 'border-slate-200', text: 'text-slate-500', nameZh: '初心', nameEn: 'Pioneer' },
+  { id: 'compass', iconName: 'Compass', bg: 'bg-[#E6EEF6]', border: 'border-[#4A90E2]/20', text: 'text-[#4A90E2]', nameZh: '探索者', nameEn: 'Explorer' },
+  { id: 'feather', iconName: 'Feather', bg: 'bg-[#FAF0F4]', border: 'border-[#DB7093]/20', text: 'text-[#DB7093]', nameZh: '执笔人', nameEn: 'Scribe' },
+  { id: 'sprout', iconName: 'Sprout', bg: 'bg-[#EAF5EC]', border: 'border-[#2E7D32]/20', text: 'text-[#2E7D32]', nameZh: '行愿者', nameEn: 'Grower' },
+  { id: 'sparkles', iconName: 'Sparkles', bg: 'bg-[#FCF7E5]', border: 'border-[#D4AF37]/20', text: 'text-[#D4AF37]', nameZh: '明思者', nameEn: 'Thinker' },
+  { id: 'heart', iconName: 'Heart', bg: 'bg-[#FDF2F2]', border: 'border-[#E53935]/20', text: 'text-[#E53935]', nameZh: '同理心', nameEn: 'Empath' },
+];
+
+export interface LevelMilestone {
+  level: number;
+  requiredExp: number;
+  gap: number;
+  titleZh: string;
+  titleEn: string;
+  descZh: string;
+  descEn: string;
+}
+
+export const LEVEL_MILESTONES: LevelMilestone[] = [
+  { level: 1, requiredExp: 0, gap: 0, titleZh: '初行者', titleEn: 'Novice Seeker', descZh: '刚刚踏上这条路', descEn: 'Just stepped onto the path' },
+  { level: 2, requiredExp: 40, gap: 40, titleZh: '探径人', titleEn: 'Path Finder', descZh: '开始摸索方向', descEn: 'Starting to find the way' },
+  { level: 3, requiredExp: 100, gap: 60, titleZh: '拾步者', titleEn: 'Step Collector', descZh: '一步一个脚印地走着', descEn: 'Taking step by step' },
+  { level: 4, requiredExp: 180, gap: 80, titleZh: '观风者', titleEn: 'Wind Watcher', descZh: '开始留意路上的风景与风向', descEn: 'Noticing the scenery and winds' },
+  { level: 5, requiredExp: 280, gap: 100, titleZh: '循迹者', titleEn: 'Trace Follower', descZh: '开始看见自己的痕迹', descEn: 'Starting to see one\'s own footprints' },
+  { level: 6, requiredExp: 400, gap: 120, titleZh: '驻思者', titleEn: 'Reflective Pauser', descZh: '走一段，停一下，回头看看', descEn: 'Walking a bit, pausing to look back' },
+  { level: 7, requiredExp: 560, gap: 160, titleZh: '识途者', titleEn: 'Path Knower', descZh: '对这条路越来越熟悉了', descEn: 'Becoming familiar with the track' },
+  { level: 8, requiredExp: 760, gap: 200, titleZh: '澄明者', titleEn: 'Clarity Dweller', descZh: '路越走越清晰，心越走越澄澈', descEn: 'Path is clearer, mind is purer' },
+  { level: 9, requiredExp: 1060, gap: 300, titleZh: '径上人', titleEn: 'One with the Path', descZh: '走了很久，路已经成了自己的一部分', descEn: 'The path is now a part of yourself' },
+];
+
+// --- Hawkins Scale of Consciousness Map ---
+export const HAWKINS_MAP: Record<string, number> = {
+  '快乐': 540,
+  '爱情': 500,
+  '自由': 400,
+  '亲情': 420,
+  '友情': 350,
+  '孤独': 150,
+  '愤怒': 150,
+  '焦虑': 100,
+  '悲伤': 75,
+  '遗憾': 60
+};
+
+export const HAWKINS_LABELS = [
+  { level: 710, labelZh: '开悟 700+', labelEn: 'Enlightenment 700+' },
+  { level: 600, labelZh: '平和 600', labelEn: 'Peace 600' },
+  { level: 540, labelZh: '喜悦 540', labelEn: 'Joy 540' },
+  { level: 500, labelZh: '爱 500', labelEn: 'Love 500' },
+  { level: 400, labelZh: '理性 400', labelEn: 'Reason 400' },
+  { level: 350, labelZh: '接纳 350', labelEn: 'Acceptance 350' },
+  { level: 310, labelZh: '意愿 310', labelEn: 'Willingness 310' },
+  { level: 250, labelZh: '中性 250', labelEn: 'Neutrality 250' },
+  { level: 200, labelZh: '勇气 200', labelEn: 'Courage 200', highlight: true },
+  { level: 175, labelZh: '骄傲 175', labelEn: 'Pride 175' },
+  { level: 150, labelZh: '愤怒 150', labelEn: 'Anger 150' },
+  { level: 100, labelZh: '恐惧 100', labelEn: 'Fear 100' },
+  { level: 75, labelZh: '悲伤 75', labelEn: 'Grief 75' },
+  { level: 30, labelZh: '内疚 30', labelEn: 'Guilt 30' },
+  { level: 20, labelZh: '羞耻 20', labelEn: 'Shame 20' }
+];
+
+export const getHawkinsYPercent = (level: number) => {
+  const clamped = Math.max(20, Math.min(1000, level));
+  if (clamped <= 200) {
+    // Map 20 -> 0%, 200 -> 40%
+    return ((clamped - 20) / (200 - 20)) * 40;
+  } else {
+    // Map 200 -> 40%, 1000 -> 100%
+    return 40 + ((clamped - 200) / (1000 - 200)) * 60;
+  }
+};
+
+export const calculateExperienceFromTraces = (
+  diaryEntries: any[], 
+  schoolStats: Record<string, number>
+) => {
+  const dailyRecords: Record<string, { diary: number; tools: number }> = {};
+
+  const getDayKey = (timestamp: number) => {
+    const d = new Date(timestamp);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  // Add Diaries
+  diaryEntries.forEach(entry => {
+    const t = entry.date || Date.now();
+    const day = getDayKey(t);
+    if (!dailyRecords[day]) dailyRecords[day] = { diary: 0, tools: 0 };
+    dailyRecords[day].diary += 1;
+  });
+
+  // Load Life Selector logs safely
+  try {
+    const saved = localStorage.getItem('life_selector_history');
+    if (saved) {
+      const list = JSON.parse(saved);
+      if (Array.isArray(list)) {
+        list.forEach((item: any) => {
+          const t = item.timestamp || Date.now();
+          const day = getDayKey(t);
+          if (!dailyRecords[day]) dailyRecords[day] = { diary: 0, tools: 0 };
+          dailyRecords[day].tools += 1;
+        });
+      }
+    }
+  } catch (e) {}
+
+  // Load Workplace Observation logs safely
+  try {
+    const saved = localStorage.getItem('work_observation_logs');
+    if (saved) {
+      const list = JSON.parse(saved);
+      if (Array.isArray(list)) {
+        list.forEach((item: any) => {
+          const t = item.timestamp || (item.date ? new Date(item.date).getTime() : Date.now());
+          const day = getDayKey(t);
+          if (!dailyRecords[day]) dailyRecords[day] = { diary: 0, tools: 0 };
+          dailyRecords[day].tools += 1;
+        });
+      }
+    }
+  } catch (e) {}
+
+  // Sum up daily capped experience
+  let baseExp = 0;
+  Object.keys(dailyRecords).forEach(day => {
+    const record = dailyRecords[day];
+    const rawDiaryExp = record.diary * 15;
+    const rawToolsExp = record.tools * 10;
+    const dayRawExp = rawDiaryExp + rawToolsExp;
+    const dayCappedExp = Math.min(100, dayRawExp); // 每日上限 100 经验
+    baseExp += dayCappedExp;
+  });
+
+  // Achievement bonuses: +30 EXP per unlocked badge
+  const diaryCount = diaryEntries.length;
+  const badgesCount = [
+    diaryCount >= 1,
+    diaryCount >= 5,
+    Object.keys(schoolStats).length >= 3,
+    diaryCount >= 10
+  ].filter(Boolean).length;
+
+  const achievementExp = badgesCount * 30; // Achievement bonus (+30 XP per badge)
+  const totalExp = baseExp + achievementExp;
+
+  return {
+    baseExp,
+    achievementExp,
+    totalExp,
+    unlockedBadgesCount: badgesCount
+  };
+};
+
+export const getLevelInfo = (totalExp: number, lang: 'zh' | 'en') => {
+  let currentMilestone = LEVEL_MILESTONES[0];
+  let nextMilestone = LEVEL_MILESTONES[1];
+
+  for (let i = 0; i < LEVEL_MILESTONES.length; i++) {
+    if (totalExp >= LEVEL_MILESTONES[i].requiredExp) {
+      currentMilestone = LEVEL_MILESTONES[i];
+      nextMilestone = LEVEL_MILESTONES[i + 1] || null;
+    } else {
+      break;
+    }
+  }
+
+  if (!nextMilestone) {
+    return {
+      level: 9,
+      title: lang === 'zh' ? currentMilestone.titleZh : currentMilestone.titleEn,
+      desc: lang === 'zh' ? currentMilestone.descZh : currentMilestone.descEn,
+      progressPercent: 100,
+      currentExpInLevel: currentMilestone.gap,
+      neededExpInLevel: currentMilestone.gap,
+      isMaxLevel: true,
+      currentExpValue: totalExp,
+      nextLevelExpValue: 1060
+    };
+  }
+
+  const expInThisLevel = totalExp - currentMilestone.requiredExp;
+  const levelExpRange = nextMilestone.requiredExp - currentMilestone.requiredExp;
+  const progressPercent = Math.round(Math.min(100, Math.max(0, (expInThisLevel / levelExpRange) * 100)));
+
+  return {
+    level: currentMilestone.level,
+    title: lang === 'zh' ? currentMilestone.titleZh : currentMilestone.titleEn,
+    desc: lang === 'zh' ? currentMilestone.descZh : currentMilestone.descEn,
+    progressPercent,
+    currentExpInLevel: expInThisLevel,
+    neededExpInLevel: levelExpRange,
+    isMaxLevel: false,
+    currentExpValue: totalExp,
+    nextLevelExpValue: nextMilestone.requiredExp
+  };
+};
+
+const getAvatarComponent = (iconName: string, size = 24, className = "") => {
+  switch (iconName) {
+    case 'User': return <User size={size} className={className} />;
+    case 'Compass': return <Compass size={size} className={className} />;
+    case 'Feather': return <Feather size={size} className={className} />;
+    case 'Sprout': return <Sprout size={size} className={className} />;
+    case 'Sparkles': return <Sparkles size={size} className={className} />;
+    case 'Heart': return <Heart size={size} className={className} />;
+    default: return <User size={size} className={className} />;
+  }
 };
 
 // --- Data Constants ---
@@ -450,6 +666,37 @@ const App: React.FC = () => {
   const { lang, setLang, t } = useLanguage();
   const [activeTab, setActiveTab] = useState<MainTab>('home');
   const [activeTool, setActiveTool] = useState<ToolType>('none');
+
+  const [nickname, setNickname] = useState(() => {
+    try {
+      const saved = localStorage.getItem('user_nickname_v2');
+      return saved || '';
+    } catch (e) {
+      return '';
+    }
+  });
+
+  const [avatarIndex, setAvatarIndex] = useState(() => {
+    try {
+      const saved = localStorage.getItem('user_avatar_index_v2');
+      return saved ? parseInt(saved, 10) : 0;
+    } catch (e) {
+      return 0;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('user_nickname_v2', nickname);
+    } catch (e) {}
+  }, [nickname]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('user_avatar_index_v2', avatarIndex.toString());
+    } catch (e) {}
+  }, [avatarIndex]);
+
   const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>(() => {
     try {
       const saved = localStorage.getItem('philosophical_diary_entries_v2');
@@ -458,9 +705,30 @@ const App: React.FC = () => {
       return [];
     }
   });
+  
+  const [userMoodSelected, setUserMoodSelected] = useState<string | null>(() => {
+    try {
+      const saved = localStorage.getItem('user_mood_selected_v2');
+      return saved || null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      if (userMoodSelected) {
+        localStorage.setItem('user_mood_selected_v2', userMoodSelected);
+      } else {
+        localStorage.removeItem('user_mood_selected_v2');
+      }
+    } catch (e) {}
+  }, [userMoodSelected]);
+
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [showToolSettings, setShowToolSettings] = useState(false);
   const [showMessages, setShowMessages] = useState(false);
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [messages, setMessages] = useState(() => {
     try {
       const saved = localStorage.getItem('system_messages_v1');
@@ -562,13 +830,30 @@ const App: React.FC = () => {
           onTabChange={setActiveTab}
           onSelectTool={setActiveTool}
           quickToolIds={quickToolIds}
+          nickname={nickname}
+          userMoodSelected={userMoodSelected}
+          setUserMoodSelected={setUserMoodSelected}
         />
       );
       case 'tools': 
         if (activeTool === 'selector') return <LifeSelector onBack={() => setActiveTool('none')} />;
         if (activeTool === 'workplace') return <WorkplaceSurvival onBack={() => setActiveTool('none')} />;
         return <Toolbox onSelectTool={setActiveTool} onOpenSettings={() => setShowToolSettings(true)} />;
-      case 'growth': return <UserCenter entries={diaryEntries} setEntries={setDiaryEntries} onTabChange={setActiveTab} onSelectTool={(t) => { setActiveTab('tools'); setActiveTool(t); }} />;
+      case 'growth': return (
+        <UserCenter 
+          entries={diaryEntries} 
+          setEntries={setDiaryEntries} 
+          onTabChange={setActiveTab} 
+          onSelectTool={(t) => { setActiveTab('tools'); setActiveTool(t); }} 
+          nickname={nickname}
+          setNickname={setNickname}
+          avatarIndex={avatarIndex}
+          setAvatarIndex={setAvatarIndex}
+          showProfileEdit={showProfileEdit}
+          setShowProfileEdit={setShowProfileEdit}
+          userMoodSelected={userMoodSelected}
+        />
+      );
       default: return null;
     }
   };
@@ -798,8 +1083,11 @@ const PhilosophicalDiary: React.FC<{
   isLoading: boolean,
   onTabChange?: (tab: MainTab) => void,
   onSelectTool?: (tool: ToolType) => void,
-  quickToolIds: string[]
-}> = ({ entries, setEntries, getInsight, isLoading, onTabChange, onSelectTool, quickToolIds }) => {
+  quickToolIds: string[],
+  nickname: string,
+  userMoodSelected: string | null,
+  setUserMoodSelected: React.Dispatch<React.SetStateAction<string | null>>
+}> = ({ entries, setEntries, getInsight, isLoading, onTabChange, onSelectTool, quickToolIds, nickname, userMoodSelected, setUserMoodSelected }) => {
   const { lang, t } = useLanguage();
   const [isDashboard, setIsDashboard] = useState(true);
   const [step, setStep] = useState<DiaryStep>('word-selection');
@@ -813,7 +1101,6 @@ const PhilosophicalDiary: React.FC<{
   const [lastReflection, setLastReflection] = useState('');
 
   // Daily mood selector states for dashboard
-  const [userMoodSelected, setUserMoodSelected] = useState<string | null>(null);
   const [showMoodToast, setShowMoodToast] = useState(false);
   const [showClarityIndexInfo, setShowClarityIndexInfo] = useState(false);
   const [globalMoodStats, setGlobalMoodStats] = useState(() => {
@@ -842,6 +1129,139 @@ const PhilosophicalDiary: React.FC<{
       setShowMoodToast(false);
     }, 4500);
   };
+
+  // Calculation of today's timestamps for "此刻的我们"
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+
+  const hasDiaryToday = entries.some(entry => {
+    return entry.date >= todayStart.getTime() && entry.date <= todayEnd.getTime();
+  });
+
+  const getHasSelectorToday = () => {
+    try {
+      const saved = localStorage.getItem('life_selector_history');
+      if (saved) {
+        const list = JSON.parse(saved);
+        if (Array.isArray(list)) {
+          const start = todayStart.getTime();
+          const end = todayEnd.getTime();
+          return list.some((item: any) => item.timestamp && item.timestamp >= start && item.timestamp <= end);
+        }
+      }
+    } catch (e) {}
+    return false;
+  };
+
+  const getHasWorkplaceToday = () => {
+    try {
+      const saved = localStorage.getItem('work_observation_logs');
+      if (saved) {
+        const list = JSON.parse(saved);
+        if (Array.isArray(list)) {
+          const start = todayStart.getTime();
+          const end = todayEnd.getTime();
+          return list.some((item: any) => {
+            const time = item.timestamp || (item.date ? new Date(item.date).getTime() : 0);
+            return time >= start && time <= end;
+          });
+        }
+      }
+    } catch (e) {}
+    return false;
+  };
+
+  const hasContributedToday = userMoodSelected !== null || hasDiaryToday || getHasSelectorToday() || getHasWorkplaceToday();
+
+  // Compute stats based on contribution
+  const baseGreat = 7;
+  const baseOkay = 5;
+  const baseBad = 2;
+
+  let greatCount = baseGreat;
+  let okayCount = baseOkay;
+  let badCount = baseBad;
+
+  if (hasContributedToday) {
+    if (userMoodSelected === 'great') {
+      greatCount += 1;
+    } else if (userMoodSelected === 'bad') {
+      badCount += 1;
+    } else {
+      okayCount += 1; // general logging or okay
+    }
+  }
+
+  const totalUsersToday = greatCount + okayCount + badCount;
+  const percentageGreat = totalUsersToday > 0 ? Math.round((greatCount / totalUsersToday) * 100) : 0;
+  const percentageOkay = totalUsersToday > 0 ? Math.round((okayCount / totalUsersToday) * 100) : 0;
+  const percentageBad = totalUsersToday > 0 ? Math.round((badCount / totalUsersToday) * 100) : 0;
+
+  // Emotional words aggregation
+  const todayEmotions = entries
+    .filter(entry => entry.date >= todayStart.getTime() && entry.date <= todayEnd.getTime())
+    .map(entry => entry.emotion);
+
+  const defaultWordsForToday = ['焦虑', '自由', '孤独'];
+  const uniqueWordSetForToday = new Set<string>();
+  todayEmotions.forEach(w => { if (w) uniqueWordSetForToday.add(w); });
+  defaultWordsForToday.forEach(w => uniqueWordSetForToday.add(w));
+  const finalWordsForToday = Array.from(uniqueWordSetForToday).slice(0, 3);
+  const wordsDisplay = finalWordsForToday.join('、');
+
+  // Philosophy school aggregation
+  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const schoolCounts: Record<string, number> = {
+    'Stoicism': 3,
+    'Pragmatism': 2,
+    'Nihilism': 1,
+    'Confucianism': 1
+  };
+  entries.forEach(entry => {
+    if (entry.date >= sevenDaysAgo && entry.school) {
+      schoolCounts[entry.school] = (schoolCounts[entry.school] || 0) + 1;
+    }
+  });
+
+  let topSchoolEn = 'Stoicism';
+  let maxSchoolCount = 0;
+  for (const s in schoolCounts) {
+    if (schoolCounts[s] > maxSchoolCount) {
+      maxSchoolCount = schoolCounts[s];
+      topSchoolEn = s;
+    }
+  }
+
+  const schoolMap: Record<string, { nameZh: string; nameEn: string; descZh: string; descEn: string }> = {
+    'Stoicism': {
+      nameZh: '斯多葛主义',
+      nameEn: 'Stoicism',
+      descZh: '用理智区分可控与不可控——这是斯多葛主义正在教大家的事。',
+      descEn: 'Distinguish what is in your control from what is not—this is what Stoicism is teaching everyone.'
+    },
+    'Pragmatism': {
+      nameZh: '实用主义',
+      nameEn: 'Pragmatism',
+      descZh: '把情绪当作行动的信号，而非终点——这是实用主义正在教大家的事。',
+      descEn: 'Treat emotion as a signal for action, not the destination—this is what Pragmatism is teaching everyone.'
+    },
+    'Nihilism': {
+      nameZh: '虚无主义',
+      nameEn: 'Nihilism',
+      descZh: '既然万物皆无意义，你拥有了绝对自由——这是虚无主义正在教大家的事。',
+      descEn: 'Since everything is meaningless, you have absolute freedom—this is what Nihilism is teaching everyone.'
+    },
+    'Confucianism': {
+      nameZh: '儒家',
+      nameEn: 'Confucianism',
+      descZh: '在群己之间寻找中正与自洽——这是儒家正在教大家的事。',
+      descEn: 'Seek balance and self-consistency between self and society—this is what Confucianism is teaching everyone.'
+    }
+  };
+
+  const topSchoolInfo = schoolMap[topSchoolEn] || schoolMap['Stoicism'];
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -885,15 +1305,27 @@ const PhilosophicalDiary: React.FC<{
   };
 
   const resetForm = () => {
-    setContent(''); setSelectedSchoolId(null); setSelectedWord(null); setWeather('sunny'); setMood('calm'); setStep('word-selection');
+    setContent('');
+    setSelectedSchoolId(null);
+    setSelectedWord(null);
+    setWeather('sunny');
+    setMood('calm');
+    setStep('word-selection');
   };
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour >= 5 && hour < 11) return t('早上好，小明');
-    if (hour >= 11 && hour < 14) return t('中午好，小明');
-    if (hour >= 14 && hour < 18) return t('下午好，小明');
-    return t('晚上好，小明');
+    const displayName = nickname.trim() || (lang === 'zh' ? '小明' : 'Ming');
+    if (hour >= 5 && hour < 11) {
+      return lang === 'zh' ? `早上好，${displayName}` : `Good morning, ${displayName}`;
+    }
+    if (hour >= 11 && hour < 14) {
+      return lang === 'zh' ? `中午好，${displayName}` : `Good noon, ${displayName}`;
+    }
+    if (hour >= 14 && hour < 18) {
+      return lang === 'zh' ? `下午好，${displayName}` : `Good afternoon, ${displayName}`;
+    }
+    return lang === 'zh' ? `晚上好，${displayName}` : `Good evening, ${displayName}`;
   };
 
   // Badge unlock indicators based on standard user behavior
@@ -1025,121 +1457,231 @@ const PhilosophicalDiary: React.FC<{
           </div>
         </div>
 
-        {/* Global Mood Trends Card */}
-        <div className="bg-white rounded-[32px] p-6 shadow-xs border border-slate-100 space-y-5 text-left">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1.5">
-              <h3 className="text-xs font-black text-slate-800 tracking-wider uppercase font-sans">
-                {t('澄识指数')}
-              </h3>
-              <button 
-                onClick={() => setShowClarityIndexInfo(true)}
-                className="p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all cursor-pointer inline-flex items-center justify-center focus:outline-none"
-                title={lang === 'zh' ? '查看指数量化逻辑' : 'View index logic'}
-              >
-                <Info size={13} className="opacity-85" />
-              </button>
-            </div>
-            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest font-sans">
-              {lang === 'zh' ? '本周趋势' : 'This Week'}
-            </span>
-          </div>
-
-          <div className="flex justify-between items-end h-28 pt-2 px-1 relative">
-            {[
-              { day: 'Mon', h: '55%', active: false },
-              { day: 'Tue', h: '68%', active: false },
-              { day: 'Wed', h: '42%', active: false },
-              { day: 'Thu', h: '72%', active: false },
-              { day: 'Fri', h: '58%', active: false },
-              { day: 'Sat', h: '85%', active: true },
-              { day: 'Sun', h: '80%', active: false }
-            ].map((bar, i) => (
-              <div key={i} className="flex flex-col items-center gap-2 flex-1">
-                <div className="w-3.5 bg-slate-50 rounded-full h-20 flex items-end overflow-hidden">
-                  <div 
-                    className="w-full rounded-full transition-all duration-1000" 
-                    style={{ 
-                      height: bar.h, 
-                      backgroundColor: bar.active ? '#9C82CB' : '#8A70D6',
-                      opacity: bar.active ? 1 : 0.7 
-                    }}
-                  />
-                </div>
-                <span className="text-[9px] text-[#A393A3] font-bold font-sans">{bar.day}</span>
+        {/* '此刻的我们' Poetic Window Card */}
+        <div className="rounded-[40px] p-6 sm:p-8 space-y-6 text-left relative overflow-hidden bg-gradient-to-b from-[#F3F0F6] to-[#FAF8FC]" style={{ border: '1px solid rgba(138, 112, 214, 0.1)' }}>
+          
+          {/* Header section with Arch Window */}
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-6 relative z-10">
+            <div className="space-y-2 max-w-sm">
+              <div className="flex items-center gap-2">
+                <h3 className="text-2xl sm:text-3xl font-serif text-slate-800 tracking-tight">
+                  {lang === 'zh' ? '此刻的我们' : t('此刻的我们')}
+                </h3>
+                <span className="text-xl inline-block select-none animate-pulse">💖</span>
+                <button 
+                  onClick={() => setShowClarityIndexInfo(true)}
+                  className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-white/60 transition-all cursor-pointer inline-flex items-center justify-center focus:outline-none"
+                  title={lang === 'zh' ? '查看指数量化逻辑' : 'View index logic'}
+                >
+                  <Info size={14} className="opacity-80" />
+                </button>
               </div>
-            ))}
-          </div>
-
-          {/* Active stats listing counts */}
-          <div className="pt-3 border-t border-slate-50 text-[10px] text-slate-400 flex justify-between font-sans items-center">
-            <span>
-              {lang === 'zh' ? '今日全球分布' : 'Today\'s choices'}: 🟢{' '}
-              <strong className="text-slate-700">{globalMoodStats.great}</strong> | 🟡{' '}
-              <strong className="text-slate-700">{globalMoodStats.okay}</strong> | 🔴{' '}
-              <strong className="text-slate-700">{globalMoodStats.bad}</strong>
-            </span>
-            <span className="italic opacity-80 italic text-[9px]">
-              {lang === 'zh' ? '实时更新' : 'Live state'}
-            </span>
-          </div>
-
-          {/* Average info stats */}
-          <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-50 text-left font-sans">
-            <div>
-              <p className="text-[10px] text-slate-400 font-bold tracking-wider uppercase">{t('全球平均')}</p>
-              <h4 className="text-lg font-black text-slate-700 mt-0.5">75%</h4>
+              <p className="text-xs sm:text-sm text-slate-400 font-medium">
+                {lang === 'zh' ? '散落的独白，在这汇成同一片天色。' : t('散落的独白，在这汇成同一片天色。')}
+              </p>
             </div>
-            <div>
-              <p className="text-[10px] text-slate-400 font-bold tracking-wider uppercase">{t('你的平均')}</p>
-              <h4 className="text-lg font-black mt-0.5" style={{ color: MorandiTheme.blue }}>
-                {diaryCount > 0 ? `${Math.min(96, 75 + diaryCount * 5)}%` : '75%'}
-              </h4>
-            </div>
-          </div>
-        </div>
 
-        {/* Badges Container */}
-        <div className="space-y-3 text-left">
-          <div className="flex justify-between items-center px-1">
-            <h3 className="text-sm font-black text-slate-800 tracking-wider uppercase font-sans">{t('你的徽章')}</h3>
-            <button 
-              onClick={() => { if (onTabChange) onTabChange('growth'); }} 
-              className="text-xs font-bold transition-opacity hover:opacity-80 font-sans flex items-center gap-0.5"
-              style={{ color: MorandiTheme.blue }}
-            >
-              <span>{t('查看全部')}</span>
-              <ChevronRight size={13} strokeWidth={2.5} />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-4 gap-2 bg-white p-5 rounded-[32px] shadow-xs border border-slate-50">
-            {[
-              { id: 'streak', name: t('7天连续'), icon: <Zap size={14} />, unlocked: isSevenDayStreak },
-              { id: 'master', name: t('反思大师'), icon: <BookOpen size={14} />, unlocked: isReflectionMaster },
-              { id: 'mood', name: t('情绪记录者'), icon: <Smile size={14} />, unlocked: b => isMoodRecorder },
-              { id: 'early', name: t('早期用户'), icon: <Award size={14} />, unlocked: true }
-            ].map(b => {
-              const isUnlocked = typeof b.unlocked === 'function' ? b.unlocked(null) : b.unlocked;
-              return (
-                <div key={b.id} className="flex flex-col items-center gap-2">
-                  <div 
-                    className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${
-                      isUnlocked 
-                        ? 'bg-gradient-to-br from-[#9C82CB] to-[#8A70D6] text-white shadow-xs' 
-                        : 'bg-slate-50 text-slate-300'
-                    }`}
-                  >
-                    {b.icon}
-                  </div>
-                  <span className="text-[9px] font-bold text-slate-500 font-sans text-center tracking-tighter truncate w-full px-0.5">
-                    {b.name}
-                  </span>
+            {/* Elegant Arch Window illustration to the right */}
+            <div className="hidden sm:block shrink-0 relative w-28 h-36 rounded-t-full border border-[#CEC5C5]/60 overflow-hidden bg-gradient-to-b from-[#E7D6EB] via-[#FCE4D6] to-[#EAEBEC] shadow-sm select-none">
+              {/* Sun in window */}
+              <div className="absolute top-8 right-3 w-10 h-10 rounded-full bg-[#F3C4CB] opacity-75 filter blur-[1px]" />
+              {/* Soft mountain layers */}
+              <div className="absolute bottom-4 left-[-20%] w-[140%] h-10 rounded-[50%] bg-[#E5EDE9]/70" />
+              <div className="absolute bottom-0 left-[-20%] w-[140%] h-7 rounded-[50%] bg-[#D2CAD8]/50" />
+              {/* Delicate glass candle */}
+              <div className="absolute bottom-1 left-4 w-5 h-5 flex items-center justify-center">
+                <div className="w-3.5 h-3.5 rounded-t-md bg-white/50 border border-white/70 relative flex items-center justify-center pb-0.5">
+                  <div className="w-1 h-1.5 bg-amber-400 rounded-full animate-pulse absolute -top-0.5" style={{ boxShadow: '0 0 4px rgba(251, 191, 36, 0.8)' }} />
                 </div>
-              );
-            })}
+              </div>
+              {/* Minimalist vase branch */}
+              <div className="absolute bottom-1 right-3 w-4 h-6">
+                <svg viewBox="0 0 20 30" className="w-full h-full text-indigo-900/40">
+                  <path d="M 10,30 Q 15,15 12,5" stroke="currentColor" strokeWidth="1" fill="none" />
+                  <path d="M 10,23 Q 4,14 6,8" stroke="currentColor" strokeWidth="1" fill="none" />
+                  <circle cx="12" cy="5" r="1.2" fill="currentColor" />
+                  <circle cx="6" cy="8" r="1.2" fill="currentColor" />
+                </svg>
+              </div>
+              {/* Marble sill plate */}
+              <div className="absolute bottom-0 left-0 w-full h-1 bg-[#CEC5C5]" />
+            </div>
           </div>
+
+          {!hasContributedToday ? (
+            /* locked state */
+            <div className="py-8 text-center space-y-3 font-sans border border-dashed border-slate-300/40 rounded-3xl bg-white/40 relative z-10">
+              <span className="text-xl">🌙</span>
+              <p className="text-xs text-slate-500 font-medium max-w-xs mx-auto px-4 leading-relaxed">
+                {lang === 'zh' ? '先等你写下今天的第一笔' : t('先等你写下今天的第一笔')}
+              </p>
+            </div>
+          ) : (
+            /* active state */
+            <div className="space-y-6 relative z-10">
+              
+              {/* 1. Translucent user count box */}
+              <div className="bg-white/50 backdrop-blur-md rounded-[28px] p-5 sm:p-6 border border-white/70 flex items-center gap-4 shadow-xs">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-50/60 flex items-center justify-center text-[#8A70D6] shrink-0">
+                  <Users size={22} strokeWidth={1.8} />
+                </div>
+                <div className="text-slate-600 font-sans text-sm sm:text-base">
+                  {lang === 'zh' ? (
+                    <>今天有 <span className="text-2xl font-light text-[#8A70D6] px-1 font-serif">{totalUsersToday}</span> 人在澄识之径</>
+                  ) : (
+                    <>Today, <span className="text-2xl font-light text-[#8A70D6] px-1 font-serif">{totalUsersToday}</span> people are on the Clarity Path</>
+                  )}
+                </div>
+              </div>
+
+              {/* 2. Emotional States distribution */}
+              <div className="space-y-4 pt-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-rose-100 flex items-center justify-center text-rose-400 shrink-0 select-none text-xs flex items-center justify-center">
+                    😊
+                  </div>
+                  <h4 className="text-xs sm:text-sm font-semibold text-slate-600 tracking-wider font-sans">
+                    {lang === 'zh' ? '情绪分布' : 'Emotional States'}
+                  </h4>
+                </div>
+
+                {totalUsersToday < 3 ? (
+                  <p className="text-xs text-slate-400 italic leading-relaxed pl-1">
+                    {lang === 'zh' ? '这里刚刚亮起第一盏灯。再过几天，会有更多人加入。' : t('这里刚刚亮起第一盏灯。再过几天，会有更多人加入。')}
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-3 gap-3 sm:gap-5">
+                    {/* 轻盈 */}
+                    <div className="space-y-2.5">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-rose-200 via-rose-100 to-rose-50/50 border border-white/60 shadow-xs">
+                          <Feather className="text-rose-400 opacity-90" size={16} />
+                        </div>
+                        <div className="text-left font-sans min-w-0">
+                          <div className="text-xs sm:text-sm font-semibold text-slate-700 truncate">{lang === 'zh' ? '轻盈' : 'Lightness'}</div>
+                          <div className="text-[10px] sm:text-xs text-rose-500 font-bold whitespace-nowrap mt-0.5">
+                            {greatCount}{lang === 'zh' ? '人' : 'p'} <span className="text-slate-400 font-medium">({percentageGreat}%)</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="h-1.5 w-full bg-rose-100/40 rounded-full overflow-hidden">
+                        <div className="h-full bg-rose-200 rounded-full transition-all duration-1000" style={{ width: `${percentageGreat}%` }} />
+                      </div>
+                    </div>
+
+                    {/* 深沉 */}
+                    <div className="space-y-2.5">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-blue-100 via-indigo-50 to-indigo-100/50 border border-white/60 shadow-xs">
+                          <Cloud className="text-indigo-400 opacity-90" size={16} />
+                        </div>
+                        <div className="text-left font-sans min-w-0">
+                          <div className="text-xs sm:text-sm font-semibold text-slate-700 truncate">{lang === 'zh' ? '深沉' : 'Deepness'}</div>
+                          <div className="text-[10px] sm:text-xs text-indigo-500 font-bold whitespace-nowrap mt-0.5">
+                            {okayCount}{lang === 'zh' ? '人' : 'p'} <span className="text-slate-400 font-medium">({percentageOkay}%)</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="h-1.5 w-full bg-indigo-100/40 rounded-full overflow-hidden">
+                        <div className="h-full bg-indigo-300 rounded-full transition-all duration-1000" style={{ width: `${percentageOkay}%` }} />
+                      </div>
+                    </div>
+
+                    {/* 凝重 */}
+                    <div className="space-y-2.5">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-[#E3DCD3] via-[#EFECE6]/80 to-[#F6F5F2]/40 border border-white/60 shadow-xs">
+                          <CloudRain className="text-amber-700/60 opacity-90" size={16} />
+                        </div>
+                        <div className="text-left font-sans min-w-0">
+                          <div className="text-xs sm:text-sm font-semibold text-slate-700 truncate">{lang === 'zh' ? '凝重' : 'Heaviness'}</div>
+                          <div className="text-[10px] sm:text-xs text-amber-700/80 font-bold whitespace-nowrap mt-0.5">
+                            {badCount}{lang === 'zh' ? '人' : 'p'} <span className="text-slate-400 font-medium">({percentageBad}%)</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="h-1.5 w-full bg-amber-100/30 rounded-full overflow-hidden">
+                        <div className="h-full bg-[#BFB2A2] rounded-full transition-all duration-1000" style={{ width: `${percentageBad}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 3. Today's top emotional words with customized pills */}
+              <div className="flex items-center gap-3 pt-1 text-xs sm:text-sm text-slate-600 font-sans flex-wrap">
+                <div className="w-7 h-7 rounded-full bg-[#EDEBEF] flex items-center justify-center text-slate-500 shrink-0">
+                  <MessageSquare size={13} />
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span>{lang === 'zh' ? '今天，大家在和' : 'Today, everyone is speaking with'}</span>
+                  {finalWordsForToday.map((word, i) => (
+                    <span key={i} className="px-3 py-0.5 rounded-lg text-xs sm:text-sm font-serif text-[#6F5E7C] bg-[#F1EFF3] border border-slate-300/10 font-bold tracking-wider shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
+                      {word}
+                    </span>
+                  ))}
+                  <span>{lang === 'zh' ? '对话' : ''}</span>
+                </div>
+              </div>
+
+              {/* 4. Weekly philosophy school preference */}
+              <div className="flex items-center gap-3 text-xs sm:text-sm text-slate-600 font-sans flex-wrap">
+                <div className="w-7 h-7 rounded-full bg-[#EAE8E2]/80 flex items-center justify-center text-slate-500 shrink-0">
+                  <Sprout size={13} />
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span>{lang === 'zh' ? '本周，更多人选择了' : 'This week, more people chose'}</span>
+                  <span className="px-3.5 py-0.5 rounded-lg text-xs sm:text-sm bg-[#F0ECE4] text-[#807259] font-serif font-bold tracking-wider border border-slate-300/15">
+                    {lang === 'zh' ? topSchoolInfo.nameZh : topSchoolInfo.nameEn}
+                  </span>
+                  <span>{lang === 'zh' ? '的视角' : 'perspective'}</span>
+                </div>
+              </div>
+
+              {/* 5. Poetic philosophical quote board */}
+              <div className="bg-[#FAF8FC]/50 p-6 sm:p-7 rounded-[32px] border border-slate-200/35 flex justify-between items-center gap-4 relative overflow-hidden">
+                <div className="text-left font-serif space-y-2 pr-2 relative z-10 flex-1">
+                  <span className="text-3xl sm:text-4xl text-indigo-300 block font-serif leading-none mt-1 select-none">“</span>
+                  <p className="text-[#6F5E7C] font-semibold tracking-wide text-sm sm:text-[15px] leading-relaxed">
+                    {lang === 'zh' ? topSchoolInfo.descZh.split('——')[0] : topSchoolInfo.descEn}
+                  </p>
+                  <p className="text-[10px] sm:text-xs text-slate-400 font-medium">
+                    {lang === 'zh' ? `——这是 ${topSchoolInfo.nameZh} 正在教大家的事。` : `This is what ${topSchoolInfo.nameEn} is teaching everyone.`}
+                  </p>
+                </div>
+
+                {/* Zen Stack Stones & Sun illustration */}
+                <div className="shrink-0 relative w-16 h-16 sm:w-20 sm:h-20 select-none opacity-85 hidden xs:block">
+                  <svg viewBox="0 0 100 100" className="w-full h-full">
+                    {/* Sun */}
+                    <circle cx="65" cy="40" r="15" fill="#F4DDD5" opacity="0.9" />
+                    {/* Fine plant leaves */}
+                    <path d="M 65,40 Q 75,22 72,12" stroke="#8A70D6" strokeWidth="0.8" fill="none" opacity="0.4" />
+                    <path d="M 65,40 Q 82,28 85,20" stroke="#8A70D6" strokeWidth="0.8" fill="none" opacity="0.4" />
+                    <circle cx="72" cy="12" r="1" fill="#8A70D6" opacity="0.5" />
+                    <circle cx="85" cy="20" r="1" fill="#8A70D6" opacity="0.5" />
+                    {/* Balanced stack stones */}
+                    <ellipse cx="45" cy="88" rx="18" ry="9" fill="#CDC3BA" />
+                    <ellipse cx="44" cy="74" rx="14" ry="7" fill="#DBD3CD" />
+                    <ellipse cx="46" cy="62" rx="10" ry="5.5" fill="#E6E0DC" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Bottom text info */}
+              <div className="pt-2 flex items-center gap-1.5 text-[9px] sm:text-[10px] text-slate-400 font-sans tracking-wide leading-relaxed">
+                <Sprout size={11} className="text-emerald-500/70" />
+                <span>
+                  {lang === 'zh' 
+                    ? '数据来自今天所有完成了记录的用户。明天醒来，这扇窗会刷新。' 
+                    : t('数据来自今天所有完成了记录的用户。明天醒来，这扇窗会刷新。')}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
+
+
 
       </div>
       ) : (
@@ -1377,100 +1919,113 @@ const PhilosophicalDiary: React.FC<{
 
       {showClarityIndexInfo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-white rounded-[40px] p-8 max-w-md w-full shadow-2xl relative text-left flex flex-col gap-6 animate-in zoom-in-95 duration-300 max-h-[85vh] overflow-y-auto">
+          <div className="bg-white rounded-[40px] p-6 sm:p-8 max-w-md w-full shadow-2xl relative text-left flex flex-col gap-6 animate-in zoom-in-95 duration-300 max-h-[85vh] overflow-y-auto">
             <div className="absolute top-0 left-0 w-full h-1.5" style={{ background: `linear-gradient(to right, ${MorandiTheme.blue}, ${MorandiTheme.purple})` }} />
             
             <div className="flex items-center justify-between">
-              <h3 className="text-md sm:text-lg font-black text-slate-800 tracking-tight font-sans">
-                {t('澄识指数计算公式')}
+              <h3 className="text-lg font-bold text-slate-800 tracking-tight font-sans">
+                {lang === 'zh' ? '关于「此刻的我们」' : 'About "Our Moment"'}
               </h3>
               <button 
                 onClick={() => setShowClarityIndexInfo(false)}
-                className="w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-all cursor-pointer"
+                className="w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-all cursor-pointer focus:outline-none"
               >
                 <X size={16} />
               </button>
             </div>
 
-            <p className="text-[11px] sm:text-xs text-slate-500 leading-relaxed font-sans">
-              {t('澄识指数（Clarity Index, CI）是反映个体内在认知秩序、情绪解离水平与理性重构深度的量化指标。基于认知行为疗法（CBT）及经典哲学流派（斯多葛、儒家、实用主义等）的理论模型构建。')}
+            <p className="text-xs sm:text-sm text-slate-500 leading-relaxed font-sans font-medium">
+              {lang === 'zh' 
+                ? '这里是与自我对话的温暖角落，也是独行灵魂们彼此照见的地方。这不是一个冷冰冰的数据看板，它的存在让你知道，此刻有人和你一样，在这里思考、感受、书写。' 
+                : 'A warm corner to converse with yourself, and a place where lone souls illuminate one another. This is not a cold data dashboard; its existence is to let you know that at this very moment, someone is thinking, feeling, and writing just like you.'}
             </p>
 
-            <div className="bg-slate-50/60 rounded-2xl p-5 border border-slate-100 text-center space-y-1.5 font-sans">
-              <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">{t('核心公式')}</span>
-              <div className="text-sm sm:text-base font-black text-slate-800 tracking-wider">
-                CI = 40% · Rr + 30% · Da + 30% · Mc
-              </div>
-            </div>
-
             <div className="space-y-4">
-              <h4 className="text-xs font-black text-slate-800 tracking-wider uppercase font-sans">
-                {t('参数说明')}
+              <h4 className="text-[10px] font-black text-slate-400 tracking-widest uppercase font-sans">
+                {lang === 'zh' ? '设计初衷与逻辑说明' : 'Concept & Interaction'}
               </h4>
               
-              <div className="space-y-3">
-                <div className="bg-slate-50/30 p-4 rounded-2xl border border-slate-100/50 space-y-1">
-                  <h5 className="font-bold text-xs text-slate-800 tracking-tight font-sans">
-                    {t('1. 认知重构系数 (Rr - Cognitive Reframing Factor)')}
-                  </h5>
-                  <p className="text-[10px] sm:text-[11px] text-slate-500 leading-relaxed font-sans">
-                    {t('衡量消极情绪或非理性信念被理性哲学框架（如斯多葛接受、儒家礼法克制、实用主义行动）成功重构的比例。**: 通过模型评估每个记录周期中的“秩序建立”质量。')}
-                  </p>
+              <div className="space-y-3.5">
+                {/* Block 1: Paricipate first */}
+                <div className="bg-[#FAF8FC] p-4 rounded-2xl border border-slate-100 flex gap-3.5 items-start">
+                  <div className="w-8 h-8 rounded-xl bg-orange-50 flex items-center justify-center text-orange-400 shrink-0 select-none">
+                    <Heart size={15} />
+                  </div>
+                  <div className="space-y-1 font-sans">
+                    <h5 className="font-bold text-xs text-slate-700 tracking-tight">
+                      {lang === 'zh' ? '需要先参与才能看' : 'Participate to View'}
+                    </h5>
+                    <p className="text-[10px] sm:text-[11px] text-slate-500 leading-relaxed">
+                      {lang === 'zh' 
+                        ? '每一个数据，都来自一个真实的人。为今天留下些什么，是在说：我也在这里。' 
+                        : 'Every piece of data comes from a real person. Leaving something for today is saying: I am here too.'}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="bg-slate-50/30 p-4 rounded-2xl border border-slate-100/50 space-y-1">
-                  <h5 className="font-bold text-xs text-slate-800 tracking-tight font-sans">
-                    {t('2. 情绪解离深度 (Da - Affect Dissociation Depth)')}
-                  </h5>
-                  <p className="text-[10px] sm:text-[11px] text-slate-500 leading-relaxed font-sans">
-                    {t('评估用户在记录前后，初始情绪浓度与反思后澄明度之间的绝对差值。差值越大，说明情绪解离越彻底。**: $Da = \text{Initial Intensity} - \text{Post-reflection Intensity}$。')}
-                  </p>
+                {/* Block 2: Source of Data */}
+                <div className="bg-[#FAF8FC] p-4 rounded-2xl border border-slate-100 flex gap-3.5 items-start">
+                  <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-[#8A70D6] shrink-0 select-none">
+                    <Users size={15} />
+                  </div>
+                  <div className="space-y-1 font-sans">
+                    <h5 className="font-bold text-xs text-slate-700 tracking-tight">
+                      {lang === 'zh' ? '数据从哪里来' : 'Where Data Comes From'}
+                    </h5>
+                    <p className="text-[10px] sm:text-[11px] text-slate-500 leading-relaxed">
+                      {lang === 'zh' 
+                        ? '你看到的每一个数字，都来自记录了今天的用户——他们可能选了首页状态、写了日记、或是使用了工具。没有为今天留下痕迹的人，不会被计入。' 
+                        : 'Every number comes from users who left a trace today—whether by selecting a status, journaling, or using our tools. Those who haven\'t contributed won\'t be counted.'}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="bg-slate-50/30 p-4 rounded-2xl border border-slate-100/50 space-y-1">
-                  <h5 className="font-bold text-xs text-slate-800 tracking-tight font-sans">
-                    {t('3. 认知秩序协同度 (Mc - Consistency & Order Synergy)')}
-                  </h5>
-                  <p className="text-[10px] sm:text-[11px] text-slate-500 leading-relaxed font-sans">
-                    {t('反映连续记录的频率和思考的内在连贯性。避免情绪随外部事件过度摆动，从而建立稳定的决策和思考心流。**: 基于过去7天连续记录 and 思考的方差指数。')}
-                  </p>
+                {/* Block 3: Privacy */}
+                <div className="bg-[#FAF8FC] p-4 rounded-2xl border border-slate-100 flex gap-3.5 items-start">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 shrink-0 select-none">
+                    <Feather size={14} />
+                  </div>
+                  <div className="space-y-1 font-sans">
+                    <h5 className="font-bold text-xs text-slate-700 tracking-tight">
+                      {lang === 'zh' ? '你的隐私' : 'Your Privacy'}
+                    </h5>
+                    <p className="text-[10px] sm:text-[11px] text-slate-500 leading-relaxed">
+                      {lang === 'zh' 
+                        ? '这里只展示聚合后的整体数据。没人能看到你的行为数据，你的日记内容永远不会出现在这里。' 
+                        : 'Only high-level aggregated data is shown. No one can see your individual behaviors, and your private journals will never appear here.'}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="space-y-3">
-              <h4 className="text-xs font-black text-slate-800 tracking-wider uppercase font-sans">
-                {t('指数分级')}
-              </h4>
-              <div className="grid grid-cols-2 gap-3 text-[9px] sm:text-[10px] font-medium font-sans">
-                <div className="p-3 rounded-2xl bg-emerald-50/30 border border-emerald-100/50 space-y-0.5">
-                  <span className="font-bold text-emerald-600 shrink-0">{t('90-100 澄明 (Highly Clear)')}</span>
-                  <p className="text-slate-400 leading-normal">{t('心物相通，理性重构高度自如，情绪能即时解离。')}</p>
-                </div>
-                <div className="p-3 rounded-2xl bg-indigo-50/30 border border-indigo-100/50 space-y-0.5">
-                  <span className="font-bold text-indigo-600 shrink-0">{t('70-89 渐悟 (Guided Clarity)')}</span>
-                  <p className="text-slate-400 leading-normal">{t('能够运用哲学工具解析日常，秩序感正在稳步建立。')}</p>
-                </div>
-                <div className="p-3 rounded-2xl bg-amber-50/30 border border-amber-100/50 space-y-0.5">
-                  <span className="font-bold text-amber-600 shrink-0">{t('50-69 混沌 (Struggling/Unordered)')}</span>
-                  <p className="text-slate-400 leading-normal">{t('情绪易受外在侵扰，理智与执念仍处于博弈拉扯阶段。')}</p>
-                </div>
-                <div className="p-3 rounded-2xl bg-rose-50/30 border border-rose-100/50 space-y-0.5">
-                  <span className="font-bold text-rose-600 shrink-0">{t('0-49 执迷 (Distorted)')}</span>
-                  <p className="text-slate-400 leading-normal">{t('缺乏认知工具，陷入单一情绪死循环，秩序亟待重建。')}</p>
+                {/* Block 4: Data Update */}
+                <div className="bg-[#FAF8FC] p-4 rounded-2xl border border-slate-100 flex gap-3.5 items-start">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-blue-400 shrink-0 select-none">
+                    <RefreshCw size={14} />
+                  </div>
+                  <div className="space-y-1 font-sans">
+                    <h5 className="font-bold text-xs text-slate-700 tracking-tight">
+                      {lang === 'zh' ? '数据更新' : 'Data Update'}
+                    </h5>
+                    <p className="text-[10px] sm:text-[11px] text-slate-500 leading-relaxed">
+                      {lang === 'zh' 
+                        ? '每天凌晨，昨日的数据退场，新的一天重新亮起。你看到的，永远是今天的此刻。' 
+                        : 'Every midnight, yesterday\'s data fades away and a new day begins. What you see is always the present moment of today.'}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
             <button 
               onClick={() => setShowClarityIndexInfo(false)} 
-              className="w-full py-4 bg-slate-800 hover:bg-slate-900 text-white rounded-2xl text-[10px] sm:text-xs font-bold tracking-widest uppercase transition-all shadow-md active:scale-98 cursor-pointer font-sans text-center mt-2"
+              className="w-full py-4 bg-slate-800 hover:bg-slate-900 text-white rounded-2xl text-xs font-bold tracking-widest uppercase transition-all shadow-md active:scale-98 cursor-pointer font-sans text-center mt-2"
             >
-              {lang === 'zh' ? '理解并关闭' : 'Close'}
+              {lang === 'zh' ? '我知道了' : 'Understood'}
             </button>
           </div>
         </div>
       )}
+
     </div>
   );
 };
@@ -1697,13 +2252,35 @@ const UserCenter: React.FC<{
   entries: DiaryEntry[], 
   setEntries: React.Dispatch<React.SetStateAction<DiaryEntry[]>>, 
   onTabChange?: (tab: MainTab) => void,
-  onSelectTool?: (tool: ToolType) => void
-}> = ({ entries, setEntries, onTabChange, onSelectTool }) => {
+  onSelectTool?: (tool: ToolType) => void,
+  nickname: string,
+  setNickname: React.Dispatch<React.SetStateAction<string>>,
+  avatarIndex: number,
+  setAvatarIndex: React.Dispatch<React.SetStateAction<number>>,
+  showProfileEdit: boolean,
+  setShowProfileEdit: React.Dispatch<React.SetStateAction<boolean>>,
+  userMoodSelected: string | null
+}> = ({ 
+  entries, 
+  setEntries, 
+  onTabChange, 
+  onSelectTool,
+  nickname,
+  setNickname,
+  avatarIndex,
+  setAvatarIndex,
+  showProfileEdit,
+  setShowProfileEdit,
+  userMoodSelected
+}) => {
   const { lang, t, setLang } = useLanguage();
   const [view, setView] = useState<GrowthView>('center');
   const [previousView, setPreviousView] = useState<GrowthView>('center');
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<{type: 'all' | 'school' | 'emotion', value: string | null}>({type: 'all', value: null});
+  const [showLevelRules, setShowLevelRules] = useState(false);
+  const [showHawkinsInfo, setShowHawkinsInfo] = useState(false);
+  const [clickedDot, setClickedDot] = useState<any>(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -1716,10 +2293,11 @@ const UserCenter: React.FC<{
   const navigateTo = (targetView: GrowthView) => {
     setPreviousView(view);
     setView(targetView);
+    setClickedDot(null);
   };
 
   const diaryCount = entries.length;
-  
+
   const schoolStats = useMemo(() => {
     const stats: Record<string, number> = {};
     entries.forEach(e => {
@@ -1727,6 +2305,145 @@ const UserCenter: React.FC<{
     });
     return stats;
   }, [entries]);
+
+  const expResult = useMemo(() => {
+    return calculateExperienceFromTraces(entries, schoolStats);
+  }, [entries, schoolStats]);
+
+  const levelInfo = useMemo(() => {
+    return getLevelInfo(expResult.totalExp, lang);
+  }, [expResult.totalExp, lang]);
+
+  const [distView, setDistView] = useState<'schools' | 'words'>('schools');
+
+  const pastWeekWordsStats = useMemo(() => {
+    const baseWordCounts: Record<string, number> = {
+      '焦虑': 4,
+      '孤独': 3,
+      '自由': 3,
+      '遗憾': 2,
+      '快乐': 2,
+      '悲伤': 1,
+      '愤怒': 1,
+      '爱情': 0,
+      '亲情': 0,
+      '友情': 0
+    };
+    const counts = { ...baseWordCounts };
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    entries.forEach(e => {
+      if (e.date >= sevenDaysAgo && e.emotion) {
+        counts[e.emotion] = (counts[e.emotion] || 0) + 1;
+      }
+    });
+
+    const list = Object.entries(counts).map(([word, val]) => ({
+      word,
+      count: val
+    }));
+
+    list.sort((a, b) => b.count - a.count);
+    return list.slice(0, 4);
+  }, [entries]);
+
+  const hawkinsChartData = useMemo(() => {
+    const current = new Date();
+    const currentDay = current.getDay();
+    const distanceToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+
+    const monday = new Date(current);
+    monday.setDate(current.getDate() + distanceToMonday);
+    monday.setHours(0, 0, 0, 0);
+
+    const days: any[] = [];
+    const weekdayNamesZh = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+    const weekdayNamesEn = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+
+      const dayStart = new Date(d);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(d);
+      dayEnd.setHours(23, 59, 59, 999);
+
+      const dayStartTs = dayStart.getTime();
+      const dayEndTs = dayEnd.getTime();
+
+      const dayEntries = entries
+        .filter(e => e.date >= dayStartTs && e.date <= dayEndTs && e.emotion)
+        .sort((a, b) => a.date - b.date);
+
+      let hasData = false;
+      let mainPoint: any = null;
+      const secondaryPoints: any[] = [];
+
+      if (dayEntries.length > 0) {
+        hasData = true;
+        const mainEntry = dayEntries[dayEntries.length - 1];
+        const mainLevel = HAWKINS_MAP[mainEntry.emotion] || 200;
+        
+        let mainDotColorGroup: 'great' | 'okay' | 'bad' | 'none' = 'none';
+        const isToday = d.toDateString() === current.toDateString();
+        if (isToday && userMoodSelected) {
+          mainDotColorGroup = userMoodSelected as 'great' | 'okay' | 'bad';
+        } else {
+          if (mainLevel >= 350) mainDotColorGroup = 'great';
+          else if (mainLevel >= 200) mainDotColorGroup = 'okay';
+          else mainDotColorGroup = 'bad';
+        }
+
+        const formatTime = (ts: number) => {
+          const dateObj = new Date(ts);
+          const hh = String(dateObj.getHours()).padStart(2, '0');
+          const mm = String(dateObj.getMinutes()).padStart(2, '0');
+          return `${hh}:${mm}`;
+        };
+
+        mainPoint = {
+          id: mainEntry.id,
+          level: mainLevel,
+          emotion: mainEntry.emotion,
+          emotionDisplay: t(mainEntry.emotion),
+          date: mainEntry.date,
+          timeStr: formatTime(mainEntry.date),
+          dotColorGroup: mainDotColorGroup,
+          isMain: true
+        };
+
+        for (let j = 0; j < dayEntries.length - 1; j++) {
+          const secEntry = dayEntries[j];
+          const secLevel = HAWKINS_MAP[secEntry.emotion] || 200;
+          let secDotColorGroup: 'great' | 'okay' | 'bad' | 'none' = 'none';
+          if (secLevel >= 350) secDotColorGroup = 'great';
+          else if (secLevel >= 200) secDotColorGroup = 'okay';
+          else secDotColorGroup = 'bad';
+
+          secondaryPoints.push({
+            id: secEntry.id,
+            level: secLevel,
+            emotion: secEntry.emotion,
+            emotionDisplay: t(secEntry.emotion),
+            date: secEntry.date,
+            timeStr: formatTime(secEntry.date),
+            dotColorGroup: secDotColorGroup,
+            isMain: false
+          });
+        }
+      }
+
+      days.push({
+        weekdayName: lang === 'zh' ? weekdayNamesZh[i] : weekdayNamesEn[i],
+        dateLabel: `${d.getMonth() + 1}/${d.getDate()}`,
+        hasData,
+        mainPoint,
+        secondaryPoints
+      });
+    }
+
+    return { days };
+  }, [entries, userMoodSelected, lang, t]);
 
   const badges: Badge[] = [
     { id: '1', name: t('破晓行者'), description: t('完成第1篇哲学日记'), icon: <Compass />, unlocked: diaryCount >= 1 },
@@ -2340,20 +3057,7 @@ ${entriesInSchool.length > 0 ? `他们记录过的感悟有：\n${entriesInSchoo
           <h2 className="text-xl font-bold opacity-70">{t('探索流派')}</h2>
         </div>
 
-        {/* Banner with state */}
-        <div className="bg-white rounded-[44px] p-8 border border-gray-100 shadow-sm space-y-4 relative overflow-hidden">
-          <BookOpen className="absolute -bottom-6 -right-6 w-32 h-32 opacity-[0.02]" />
-          <div className="space-y-1">
-            <span className="text-[9px] font-bold opacity-30 uppercase tracking-[0.2em] block">THOUGHT MATRIX INDEX</span>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold opacity-85">{schoolStatsCount}</span>
-              <span className="text-xs opacity-30">/ 4 {t('个已记录维度')}</span>
-            </div>
-          </div>
-          <p className="text-[11px] text-gray-400 leading-relaxed font-serif italic pt-2 border-t border-gray-50">
-            {t('“心智之秩序不应任凭本能摆弄，而应交由先贤理性所铸之框架安放。在此翻阅学派书室，让每一次日常实践都在古典智慧中交汇。”')}
-          </p>
-        </div>
+
 
         {/* School Shelf Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2915,27 +3619,57 @@ ${entriesInSchool.length > 0 ? `他们记录过的感悟有：\n${entriesInSchoo
           </div>
           
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-[20px] bg-gray-50 flex items-center justify-center border-2 border-white shadow-md rotate-2 shrink-0">
-              <User size={28} className="text-gray-300" />
+            <div 
+              onClick={() => setShowProfileEdit(true)}
+              className={`w-14 h-14 rounded-[20px] flex items-center justify-center border-2 border-white shadow-md rotate-2 shrink-0 cursor-pointer hover:scale-105 hover:rotate-6 active:scale-95 transition-all group relative overflow-hidden ${AVATAR_OPTIONS[avatarIndex % AVATAR_OPTIONS.length].bg}`}
+              title={lang === 'zh' ? '修改头像和昵称' : 'Edit avatar and nickname'}
+            >
+              <div className="absolute inset-x-0 bottom-0 bg-black/60 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white select-none">
+                <span className="text-[7.5px] font-sans font-bold tracking-wider uppercase scale-90">
+                  {lang === 'zh' ? '修改' : 'Edit'}
+                </span>
+              </div>
+              {getAvatarComponent(
+                AVATAR_OPTIONS[avatarIndex % AVATAR_OPTIONS.length].iconName, 
+                26, 
+                AVATAR_OPTIONS[avatarIndex % AVATAR_OPTIONS.length].text
+              )}
             </div>
             <div className="space-y-0.5">
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-gray-800 font-serif">{t('秩序构建者')}</h2>
-                <span className="text-[8px] px-2 py-0.5 rounded-full font-bold tracking-wider scale-90 origin-left shrink-0" style={{ backgroundColor: `${MorandiTheme.purple}15`, color: MorandiTheme.purple }}>
-                  Lv.{Math.floor(diaryCount/5) + 1}
-                </span>
+                <h2 
+                  onClick={() => setShowProfileEdit(true)}
+                  className="text-base font-bold text-gray-800 tracking-tight font-sans cursor-pointer hover:text-slate-600 transition-colors flex items-center gap-1 group/title"
+                  title={lang === 'zh' ? '修改昵称' : 'Edit nickname'}
+                >
+                  <span>{nickname || (lang === 'zh' ? '小明' : 'Ming')}</span>
+                  <PenLine size={10} className="opacity-0 group-hover/title:opacity-40 transition-opacity text-slate-500" />
+                </h2>
+                <button
+                  onClick={() => setShowLevelRules(true)}
+                  className="flex items-center gap-1 shrink-0 scale-90 origin-left hover:opacity-85 active:scale-95 transition-all bg-[#8A70D6]/10 px-1.5 py-0.5 rounded-full cursor-pointer border border-transparent hover:border-[#8A70D6]/20 select-none text-left"
+                  title={lang === 'zh' ? '查看等级细则指南' : 'View Level Guide'}
+                >
+                  <span className="text-[8px] font-extrabold tracking-wider" style={{ color: MorandiTheme.purple }}>
+                    Lv.{levelInfo.level}
+                  </span>
+                  <Info size={7} className="text-purple-400 font-bold" />
+                </button>
               </div>
-              <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold font-sans">Pathway Pioneer</p>
+              <div className="flex items-center gap-1.5 text-[10px] text-gray-400 font-bolder font-sans uppercase tracking-[0.1em]">
+                <span>{levelInfo.title}</span>
+              </div>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <div className="flex justify-between text-[9px] font-bold text-gray-400 uppercase tracking-wider">
-              <span>{t('践行进度')}</span>
-              <span>{(diaryCount % 5) * 20}%</span>
+          <div className="space-y-1.5">
+            <div className="flex justify-end text-[9px] font-bold text-gray-400 uppercase tracking-wider">
+              <span>
+                {levelInfo.currentExpValue} / {levelInfo.isMaxLevel ? '1060' : levelInfo.nextLevelExpValue} EXP {levelInfo.isMaxLevel ? `(${lang === 'zh' ? '已满级' : 'Max'})` : `(${levelInfo.progressPercent}%)`}
+              </span>
             </div>
-            <div className="w-full bg-gray-50 h-[3px] rounded-full overflow-hidden">
-              <div className="h-full transition-all duration-1000 rounded-full" style={{ width: `${(diaryCount % 5) * 20}%`, backgroundColor: MorandiTheme.purple }}></div>
+            <div className="w-full bg-gray-50 h-[4px] rounded-full overflow-hidden">
+              <div className="h-full transition-all duration-1000 rounded-full animate-pulse-slow" style={{ width: `${levelInfo.progressPercent}%`, backgroundColor: MorandiTheme.purple }}></div>
             </div>
           </div>
         </section>
@@ -3000,28 +3734,534 @@ ${entriesInSchool.length > 0 ? `他们记录过的感悟有：\n${entriesInSchoo
 
       {/* School Distribution */}
       <section className="bg-white rounded-[40px] p-8 border border-gray-50 shadow-sm space-y-6">
-        <div className="flex items-center justify-between">
-           <h3 className="text-[10px] font-bold opacity-30 uppercase tracking-[0.4em]">{t('思辨偏好分布')}</h3>
-           <BarChart3 size={14} className="opacity-10" />
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <h3 className="text-[10px] font-bold opacity-30 uppercase tracking-[0.4em]">
+              {distView === 'schools' ? t('思辨偏好分布') : (lang === 'zh' ? '本周心境地图' : "Weekly Consciousness Map")}
+            </h3>
+            {distView === 'words' && (
+              <button
+                type="button"
+                onClick={() => setShowHawkinsInfo(true)}
+                className="text-[#8A70D6] opacity-60 hover:opacity-100 transition-all p-1 hover:bg-slate-50 rounded-full flex items-center justify-center cursor-pointer"
+                title={lang === 'zh' ? '查看霍金斯意识层级研究逻辑' : 'View Hawkins scale research logic'}
+              >
+                <Info size={11} className="stroke-[2.5]" />
+              </button>
+            )}
+          </div>
+          <div className="flex items-center bg-gray-50/80 p-0.5 rounded-xl border border-gray-100/50">
+            <button
+              onClick={() => setDistView('schools')}
+              className={`text-[9.5px] font-bold px-3 py-1 rounded-lg transition-all focus:outline-none cursor-pointer ${
+                distView === 'schools'
+                  ? 'bg-white text-slate-800 shadow-xs'
+                  : 'text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              {lang === 'zh' ? '思辨偏好' : 'Schools'}
+            </button>
+            <button
+              onClick={() => setDistView('words')}
+              className={`text-[9.5px] font-bold px-3 py-1 rounded-lg transition-all focus:outline-none cursor-pointer ${
+                distView === 'words'
+                  ? 'bg-white text-slate-800 shadow-xs'
+                  : 'text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              {lang === 'zh' ? '意识地图' : 'Consciousness Map'}
+            </button>
+          </div>
         </div>
-        <div className="space-y-5">
-           {SCHOOLS.map(school => {
-             const count = schoolStats[school.name] || 0;
-             const percent = diaryCount > 0 ? (count / diaryCount) * 100 : 0;
-             return (
-               <div key={school.id} className="space-y-2 text-left">
-                  <div className="flex justify-between text-[10px] font-bold opacity-60">
-                     <span>{t(school.name)}</span>
-                     <span className="opacity-40">{count} {t('次')}</span>
+
+        {distView === 'schools' ? (
+          <div className="space-y-5 animate-in fade-in duration-300">
+             {SCHOOLS.map(school => {
+               const count = schoolStats[school.name] || 0;
+               const percent = diaryCount > 0 ? (count / diaryCount) * 100 : 0;
+               return (
+                 <div key={school.id} className="space-y-2 text-left">
+                    <div className="flex justify-between text-[10px] font-bold opacity-60">
+                       <span>{t(school.name)}</span>
+                       <span className="opacity-40 font-mono">{count} {t('次')}</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-gray-50 rounded-full overflow-hidden">
+                       <div className="h-full bg-morandi-blue rounded-full transition-all duration-1000" style={{ width: `${percent}%`, backgroundColor: MorandiTheme.blue }}></div>
+                    </div>
+                 </div>
+               );
+             })}
+          </div>
+        ) : (() => {
+          // Identify max logged level to scale graph dynamically
+          const allLevels: number[] = [];
+          hawkinsChartData.days.forEach((d: any) => {
+            if (d.hasData) {
+              if (d.mainPoint) allLevels.push(d.mainPoint.level);
+              if (d.secondaryPoints) {
+                d.secondaryPoints.forEach((s: any) => allLevels.push(s.level));
+              }
+            }
+          });
+          const maxLevelInWeek = Math.max(...allLevels, 0);
+          const yMax = maxLevelInWeek > 600 ? 1000 : 600;
+          
+          // Define SVG coordinate dimensions
+          const W = 600;
+          const H = 240;
+          const lg = 52;
+          const rg = 20;
+          const tg = 25;
+          const bg = 35;
+          const plotW = W - lg - rg; // 528
+          const plotH = H - tg - bg; // 180
+
+          const getX = (idx: number) => lg + (idx / 6) * plotW;
+          const getY = (level: number) => tg + plotH - (Math.min(yMax, level) / yMax) * plotH;
+
+          // Days with active logged levels
+          const loggedDays = hawkinsChartData.days.filter((d: any) => d.hasData);
+          
+          // Smooth Bezier path generator (Cubic Bezier curve through points)
+          const getSmoothPath = (pts: { x: number; y: number }[]) => {
+            if (pts.length === 0) return '';
+            if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
+            let path = `M ${pts[0].x} ${pts[0].y}`;
+            for (let i = 0; i < pts.length - 1; i++) {
+              const p0 = pts[i];
+              const p1 = pts[i + 1];
+              const dx = p1.x - p0.x;
+              path += ` C ${p0.x + dx / 3} ${p0.y}, ${p0.x + (dx * 2) / 3} ${p1.y}, ${p1.x} ${p1.y}`;
+            }
+            return path;
+          };
+
+          // Find coordinates of main points in order to form the smooth curve
+          const pathPoints = loggedDays.map((d: any) => {
+            const idx = hawkinsChartData.days.indexOf(d);
+            return {
+              x: getX(idx),
+              y: getY(d.mainPoint.level)
+            };
+          });
+
+          // Generate path only if we have 2 or more active days
+          const pathD = pathPoints.length >= 2 ? getSmoothPath(pathPoints) : '';
+          const areaD = pathPoints.length >= 2 ? (
+            `${pathD} L ${pathPoints[pathPoints.length - 1].x} ${tg + plotH} L ${pathPoints[0].x} ${tg + plotH} Z`
+          ) : '';
+
+          // Gather all dots (both main and secondary) to render
+          const allActiveDots: any[] = [];
+          hawkinsChartData.days.forEach((day: any, dayIdx: number) => {
+            if (day.hasData) {
+              if (day.mainPoint) {
+                allActiveDots.push({
+                  ...day.mainPoint,
+                  dayIdx,
+                  cx: getX(dayIdx),
+                  cy: getY(day.mainPoint.level),
+                  weekdayName: day.weekdayName,
+                  dateLabel: day.dateLabel
+                });
+              }
+              if (day.secondaryPoints) {
+                day.secondaryPoints.forEach((sec: any) => {
+                  allActiveDots.push({
+                    ...sec,
+                    dayIdx,
+                    cx: getX(dayIdx),
+                    cy: getY(sec.level),
+                    weekdayName: day.weekdayName,
+                    dateLabel: day.dateLabel
+                  });
+                });
+              }
+            }
+          });
+
+          // Determine grid line values (e.g. 0, 200, 400, 600 or 0, 200, 400, 600, 800, 1000)
+          const gridLines = yMax === 600 ? [0, 200, 400, 600] : [0, 200, 400, 600, 800, 1000];
+
+          return (
+            <div className="flex flex-col gap-6 pt-1 text-left animate-in fade-in duration-300">
+              <div className="w-full relative select-none">
+                <svg 
+                  viewBox="0 0 600 240" 
+                  className="w-full h-auto overflow-visible select-none font-sans"
+                  onClick={() => setClickedDot(null)}
+                >
+                  {/* Defs for nice gradient under path */}
+                  <defs>
+                    <linearGradient id="hawkinsChartGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#8A70D6" stopOpacity="0.18" />
+                      <stop offset="100%" stopColor="#8A70D6" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+
+                  {/* Horizontal dotted grid lines */}
+                  {gridLines.map(val => {
+                    const y = getY(val);
+                    return (
+                      <g key={val} className="opacity-90">
+                        {/* Only draw dotted grid lines if they are not the baseline (0) */}
+                        {val !== 0 && (
+                          <line 
+                            x1={lg} 
+                            y1={y} 
+                            x2={W - rg} 
+                            y2={y} 
+                            stroke="#E2E8F0" 
+                            strokeDasharray="4 4" 
+                            strokeWidth="1.2"
+                            className="opacity-60"
+                          />
+                        )}
+                        {/* Y-axis Labels */}
+                        <text
+                          x={lg - 10}
+                          y={y + 4}
+                          textAnchor="end"
+                          fontSize="11.5"
+                          fontWeight="bold"
+                          fill="#475569"
+                          className="font-mono select-none"
+                        >
+                          {val}
+                        </text>
+                      </g>
+                    );
+                  })}
+
+                  {/* Left solid axis boundary line */}
+                  <line 
+                    x1={lg} 
+                    y1={tg} 
+                    x2={lg} 
+                    y2={tg + plotH} 
+                    stroke="#CBD5E1" 
+                    strokeWidth="1.5"
+                  />
+
+                  {/* Bottom solid axis boundary line */}
+                  <line 
+                    x1={lg} 
+                    y1={tg + plotH} 
+                    x2={W - rg} 
+                    y2={tg + plotH} 
+                    stroke="#CBD5E1" 
+                    strokeWidth="1.5"
+                  />
+
+                  {/* Filled area under the curve */}
+                  {areaD && (
+                    <path
+                      d={areaD}
+                      fill="url(#hawkinsChartGradient)"
+                    />
+                  )}
+
+                  {/* Connected line path */}
+                  {pathD && (
+                    <path
+                      d={pathD}
+                      fill="none"
+                      stroke="#8A70D6"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  )}
+
+                  {/* Weekday name and date labels at bottom */}
+                  {hawkinsChartData.days.map((day, idx) => {
+                    const cx = getX(idx);
+                    return (
+                      <g key={idx}>
+                        {/* X-axis Weekday Name */}
+                        <text
+                          x={cx}
+                          y={H - 18}
+                          textAnchor="middle"
+                          fontSize="11.5"
+                          fontWeight="bold"
+                          fill="#8A70D6"
+                          className="font-sans select-none"
+                        >
+                          {day.weekdayName}
+                        </text>
+                        {/* X-axis Date string */}
+                        <text
+                          x={cx}
+                          y={H - 5}
+                          textAnchor="middle"
+                          fontSize="8.5"
+                          fontWeight="medium"
+                          fill="#475569"
+                          className="font-mono select-none opacity-90"
+                        >
+                          {day.dateLabel}
+                        </text>
+                      </g>
+                    );
+                  })}
+
+                  {/* Highlight ring for the active clicked dot */}
+                  {clickedDot && (
+                    <circle
+                      cx={clickedDot.cx}
+                      cy={clickedDot.cy}
+                      r="14"
+                      fill="none"
+                      stroke="#8A70D6"
+                      strokeWidth="2"
+                      strokeDasharray="3 2"
+                      opacity="0.9"
+                    />
+                  )}
+
+                  {/* Active Dots, Hover Rings and Emotion Labels */}
+                  {allActiveDots.map((dot, idx) => {
+                    const cx = dot.cx;
+                    const cy = dot.cy;
+
+                    let dotColor = '#9CA3AF';
+                    if (dot.dotColorGroup === 'great') {
+                      dotColor = '#FB923C';
+                    } else if (dot.dotColorGroup === 'okay') {
+                      dotColor = '#8A70D6';
+                    } else if (dot.dotColorGroup === 'bad') {
+                      dotColor = '#4B5563';
+                    }
+
+                    return (
+                      <g key={idx}>
+                        {/* Hover ring (back) */}
+                        <circle
+                          cx={cx}
+                          cy={cy}
+                          r="11.5"
+                          fill={dotColor}
+                          fillOpacity="0.14"
+                          className="pointer-events-none"
+                        />
+
+                        {/* Line connector guide to bottom (translucent) */}
+                        <line
+                          x1={cx}
+                          y1={cy + 6}
+                          x2={cx}
+                          y2={tg + plotH}
+                          stroke="#E2E8F0"
+                          strokeDasharray="2 2"
+                          strokeWidth="1.2"
+                        />
+
+                        {/* Interactive Dot / Diamond */}
+                        {!dot.isMain ? (
+                          <path
+                            d={`M ${cx - 7} ${cy} L ${cx} ${cy - 7} L ${cx + 7} ${cy} L ${cx} ${cy + 7} Z`}
+                            fill="#FFFFFF"
+                            stroke={dotColor}
+                            strokeWidth="3.5"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setClickedDot(dot);
+                            }}
+                            className="cursor-pointer transition-transform duration-200 hover:scale-130"
+                          >
+                            <title>{`${dot.weekdayName}: ${dot.emotionDisplay} (${Math.round(dot.level)})`}</title>
+                          </path>
+                        ) : (
+                          <circle
+                            cx={cx}
+                            cy={cy}
+                            r="5.5"
+                            fill="#FFFFFF"
+                            stroke={dotColor}
+                            strokeWidth="4"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setClickedDot(dot);
+                            }}
+                            className="cursor-pointer transition-transform duration-200 hover:scale-130"
+                          >
+                            <title>{`${dot.weekdayName}: ${dot.emotionDisplay} (${Math.round(dot.level)})`}</title>
+                          </circle>
+                        )}
+                      </g>
+                    );
+                  })}
+                </svg>
+
+                {/* Floating details popup card describing "哪个词 - 几点标记的" on click */}
+                {clickedDot && (
+                  <div 
+                    className="absolute bg-slate-950 border border-slate-800 text-white rounded-2xl p-3 shadow-2xl text-[11px] z-30 flex flex-col gap-1 -translate-x-1/2 pointer-events-auto"
+                    style={{
+                      left: `${(clickedDot.cx / 600) * 100}%`,
+                      top: `${(clickedDot.cy / 240) * 100}%`,
+                      transform: 'translate(-50%, -108%)'
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-5 font-sans font-extrabold whitespace-nowrap">
+                      <span className="text-[#A78BFA] font-bold text-[11.5px]">
+                        {clickedDot.emotionDisplay} ({clickedDot.emotion})
+                      </span>
+                      <span className="text-slate-400 font-mono text-[10px] font-semibold">{clickedDot.timeStr}</span>
+                    </div>
+                    <div className="text-[9.5px] font-mono text-slate-300 font-medium whitespace-nowrap">
+                      {lang === 'zh' ? `频率: ${Math.round(clickedDot.level)}` : `Level: ${Math.round(clickedDot.level)}`} ({clickedDot.weekdayName} {clickedDot.dateLabel})
+                    </div>
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-[5px] border-transparent border-t-slate-950" />
                   </div>
-                  <div className="h-1.5 w-full bg-gray-50 rounded-full overflow-hidden">
-                     <div className="h-full bg-morandi-blue rounded-full transition-all duration-1000" style={{ width: `${percent}%`, backgroundColor: MorandiTheme.blue }}></div>
-                  </div>
-               </div>
-             );
-           })}
-        </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
       </section>
+
+      {/* Hawkins Scale of Consciousness Map explanations modal */}
+      {showHawkinsInfo && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[32px] w-full max-w-sm overflow-hidden border border-slate-100 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="p-5 border-b border-gray-100/50 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-md bg-purple-50 flex items-center justify-center text-[#8A70D6]">
+                  <Info size={11} className="stroke-[2.5]" />
+                </div>
+                <h4 className="font-sans font-extrabold text-slate-800 text-[11px] tracking-widest uppercase">
+                  {lang === 'zh' ? '大卫·霍金斯意识层级研究' : 'Hawkins Scale of Consciousness'}
+                </h4>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setShowHawkinsInfo(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+              >
+                <X size={14} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-5 max-h-[64vh] overflow-y-auto text-left leading-relaxed">
+              {lang === 'zh' ? (
+                <div className="space-y-5 text-slate-600 text-[10.5px]">
+                  <div>
+                    <h5 className="font-sans font-bold text-slate-800 text-[11px] mb-1.5 flex items-center gap-1.5 text-[#8A70D6]">
+                      <span>✦</span> 关于意识地图与霍金斯层级
+                    </h5>
+                    <p className="leading-relaxed font-sans font-medium text-slate-500">
+                      这张图背后，是美国精神病学家大卫·霍金斯（David R. Hawkins）跨越30年的研究。
+                    </p>
+                    <p className="leading-relaxed font-sans mt-2">
+                      在《意念力》（Power vs. Force）一书中，霍金斯提出了一个与日常心理学完全不同的框架：人类的意识状态可以被校准为一个从1到1000的对数尺度。这个尺度不是凭感觉定的——他用了超过25万次肌动学测试，让被试在面对不同陈述时测量肌肉的即时反应强度，从而分离出每个意识状态对应的能量层级。
+                    </p>
+                  </div>
+
+                  <div className="bg-purple-50/30 p-3.5 rounded-2xl border border-purple-100/30 space-y-2">
+                    <h5 className="font-sans font-bold text-slate-800 text-[11px] flex items-center gap-1.5 text-[#8A70D6]">
+                      <span>✦</span> 核心发现
+                    </h5>
+                    <p className="font-sans leading-relaxed">
+                      <strong className="text-slate-800">200是分水岭</strong>。霍金斯称之为“勇气的临界线”。
+                    </p>
+                    <div className="space-y-1.5 text-[10px] mt-2">
+                      <p className="flex items-start gap-1">
+                        <span className="text-rose-500 font-bold shrink-0">·</span>
+                        <span><strong className="text-slate-700">200以下</strong> —— 羞耻(20)、内疚(30)、悲伤(75)、恐惧(100)、愤怒(150) —— 是破坏性的“力”(Force)。它们消耗你，让生命体验收缩。</span>
+                      </p>
+                      <p className="flex items-start gap-1">
+                        <span className="text-emerald-500 font-bold shrink-0">·</span>
+                        <span><strong className="text-slate-700">200以上</strong> —— 中性(250)、意愿(310)、接纳(350)、理性(400)、爱(500)、喜悦(540) —— 是建设性的“能”(Power)。它们滋养你，让生命体验扩张。</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h5 className="font-sans font-bold text-slate-800 text-[11px] mb-1.5 flex items-center gap-1.5 text-[#8A70D6]">
+                      <span>✦</span> 这和对错无关
+                    </h5>
+                    <p className="leading-relaxed font-sans">
+                      在霍金斯看来，层级低不等于“你有问题”。人会在不同时刻处于不同层级。一生的功课不是永远待在喜悦层，而是学会识别自己此刻的位置，并在条件允许时向上移动。
+                    </p>
+                  </div>
+
+                  <div className="border-t border-dashed border-gray-100 pt-4">
+                    <h5 className="font-sans font-bold text-slate-800 text-[11px] mb-1.5 flex items-center gap-1.5 text-[#8A70D6]">
+                      <span>✦</span> 和澄识之径的关系
+                    </h5>
+                    <p className="leading-relaxed font-sans font-medium text-slate-500">
+                      你的每一篇日记，都在意识地图上留下了一个坐标。我们不会用情绪的好坏来评判你——焦虑(100)和快乐(540)同样是你真实的瞬间。你看见它，它就已经开始松动。
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-5 text-slate-600 text-[10.5px]">
+                  <div>
+                    <h5 className="font-sans font-bold text-slate-800 text-[11px] mb-1.5 flex items-center gap-1.5 text-[#8A70D6]">
+                      <span>✦</span> About Consciousness Map & Hawkins Scale
+                    </h5>
+                    <p className="leading-relaxed font-sans font-medium text-slate-500">
+                      This visualization is inspired by over 30 years of research by American psychiatrist Dr. David R. Hawkins.
+                    </p>
+                    <p className="leading-relaxed font-sans mt-2">
+                      In his seminal work *Power vs. Force*, Hawkins proposed a framework distinct from mainstream psychology: human conscious states can be calibrated logarithmically from 1 to 1000. This is not arbitrary; over 250,000 kinesiology tests measured muscle response strength to identify specific energy levels.
+                    </p>
+                  </div>
+
+                  <div className="bg-purple-50/30 p-3.5 rounded-2xl border border-purple-100/30 space-y-2">
+                    <h5 className="font-sans font-bold text-slate-800 text-[11px] flex items-center gap-1.5 text-[#8A70D6]">
+                      <span>✦</span> Key Discoveries
+                    </h5>
+                    <p className="font-sans leading-relaxed">
+                      <strong className="text-slate-800">200 is the critical baseline</strong>, which Hawkins termed the "Critical Line of Courage."
+                    </p>
+                    <div className="space-y-1.5 text-[10px] mt-2">
+                      <p className="flex items-start gap-1">
+                        <span className="text-rose-500 font-bold shrink-0">·</span>
+                        <span><strong className="text-slate-700">Below 200</strong> — Shame (20), Guilt (30), Grief (75), Fear (100), Anger (150) — represent destructive <strong className="text-slate-800">"Force"</strong>. They consume your energy and contract your life.</span>
+                      </p>
+                      <p className="flex items-start gap-1">
+                        <span className="text-emerald-500 font-bold shrink-0">·</span>
+                        <span><strong className="text-slate-700">Above 200</strong> — Neutrality (250), Willingness (310), Acceptance (350), Reason (400), Love (500), Joy (540) — represent constructive <strong className="text-slate-800">"Power"</strong>. They nourish your soul and expand your life.</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h5 className="font-sans font-bold text-slate-800 text-[11px] mb-1.5 flex items-center gap-1.5 text-[#8A70D6]">
+                      <span>✦</span> Beyond Right or Wrong
+                    </h5>
+                    <p className="leading-relaxed font-sans">
+                      According to Hawkins, a lower state does not mean "something is wrong with you." We constantly cycle through multiple levels. Our life's practice is to recognize where we stand today and move upwards whenever possible.
+                    </p>
+                  </div>
+
+                  <div className="border-t border-dashed border-gray-100 pt-4">
+                    <h5 className="font-sans font-bold text-slate-800 text-[11px] mb-1.5 flex items-center gap-1.5 text-[#8A70D6]">
+                      <span>✦</span> Relation to Pathway of Clarity
+                    </h5>
+                    <p className="leading-relaxed font-sans font-medium text-slate-500">
+                      Every entry you write leaves a trace on this consciousness map. We never judge your emotions as good or bad — Anxiety (100) and Joy (540) are equally valid snapshots of your raw presence. The moment you acknowledge a state, it has already begun to shift.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 bg-slate-50/80 border-t border-gray-100 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowHawkinsInfo(false)}
+                className="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-[9px] font-bold uppercase tracking-widest transition-all cursor-pointer shadow-xs active:scale-95"
+              >
+                {lang === 'zh' ? '我知道了' : 'Got it'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Recent Footprints */}
       <section className="space-y-5">
@@ -3066,7 +4306,10 @@ ${entriesInSchool.length > 0 ? `他们记录过的感悟有：\n${entriesInSchoo
         </div>
         <div className="grid grid-cols-2 gap-4">
           {badges.map(badge => (
-            <div key={badge.id} className={`p-6 rounded-[36px] border flex flex-col items-center text-center space-y-4 transition-all ${badge.unlocked ? 'bg-white shadow-sm border-gray-50' : 'grayscale opacity-10 border-transparent'}`}>
+            <div key={badge.id} className={`p-6 rounded-[36px] border flex flex-col items-center text-center space-y-4 transition-all relative ${badge.unlocked ? 'bg-white shadow-sm border-gray-50' : 'grayscale opacity-10 border-transparent'}`}>
+              <div className="absolute top-4 right-4 text-[7px] px-1.5 py-0.5 rounded-full font-sans font-bold tracking-wider" style={{ backgroundColor: `${MorandiTheme.purple}10`, color: MorandiTheme.purple }}>
+                +30 EXP
+              </div>
               <div className={`p-4 rounded-2xl ${badge.unlocked ? 'bg-morandi-soft-purple' : 'bg-gray-100'}`} style={{backgroundColor: badge.unlocked ? MorandiTheme.softPurple : '', color: badge.unlocked ? MorandiTheme.purple : 'inherit'}}>
                 {React.cloneElement(badge.icon as React.ReactElement, { size: 24 })}
               </div>
@@ -3078,14 +4321,220 @@ ${entriesInSchool.length > 0 ? `他们记录过的感悟有：\n${entriesInSchoo
           ))}
         </div>
       </section>
+
+      {showProfileEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white rounded-[40px] p-6 sm:p-8 max-w-sm w-full shadow-2xl relative text-left flex flex-col gap-6 animate-in zoom-in-95 duration-300">
+            <div className="absolute top-0 left-0 w-full h-1.5" style={{ background: `linear-gradient(to right, ${MorandiTheme.blue}, ${MorandiTheme.purple})` }} />
+            
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-800 tracking-tight font-sans">
+                {lang === 'zh' ? '个性化设置' : 'Profile Settings'}
+              </h3>
+              <button 
+                onClick={() => setShowProfileEdit(false)}
+                className="w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-all cursor-pointer focus:outline-none"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Nickname Input Section */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 tracking-widest uppercase font-sans">
+                {lang === 'zh' ? '你的专属昵称' : 'Personal Nickname'}
+              </label>
+              <div className="relative">
+                <input 
+                  type="text" 
+                  value={nickname}
+                  onChange={(e) => {
+                    if (e.target.value.length <= 15) {
+                      setNickname(e.target.value);
+                    }
+                  }}
+                  className="w-full px-4 py-3 bg-[#FAF8FC] border border-slate-200/65 rounded-2xl text-sm font-medium text-slate-700 placeholder-slate-300 focus:outline-none focus:border-[#8A70D6]/60 focus:bg-white transition-all font-sans"
+                  placeholder={lang === 'zh' ? '小明' : 'Ming'}
+                />
+                <span className="absolute right-3.5 top-3.5 text-[9px] font-bold text-slate-300 font-sans">
+                  {nickname.length}/15
+                </span>
+              </div>
+            </div>
+
+            {/* Avatar Select Section */}
+            <div className="space-y-2.5">
+              <label className="text-[10px] font-black text-slate-400 tracking-widest uppercase font-sans">
+                {lang === 'zh' ? '选择心灵印记' : 'Choose Your Icon'}
+              </label>
+
+              <div className="grid grid-cols-3 gap-3">
+                {AVATAR_OPTIONS.map((item, idx) => {
+                  const isSelected = avatarIndex === idx;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setAvatarIndex(idx)}
+                      className={`group p-3 rounded-2xl border flex flex-col items-center gap-1.5 transition-all focus:outline-none cursor-pointer active:scale-95 ${
+                        isSelected 
+                          ? `border-[#9C82CB] ${item.bg} shadow-xs scale-102` 
+                          : 'border-slate-100 bg-slate-50/50 hover:bg-white hover:border-slate-200'
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isSelected ? 'bg-white shadow-xs' : item.bg} transition-all`}>
+                        {getAvatarComponent(item.iconName, 20, item.text)}
+                      </div>
+                      <span className={`text-[9.5px] font-bold font-sans transition-colors ${isSelected ? 'text-slate-800' : 'text-slate-400 group-hover:text-slate-600'}`}>
+                        {lang === 'zh' ? item.nameZh : item.nameEn}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Confirm button */}
+            <button 
+              onClick={() => setShowProfileEdit(false)} 
+              className="w-full py-3.5 bg-slate-800 hover:bg-slate-900 text-white rounded-2xl text-xs font-bold tracking-widest uppercase transition-all shadow-md active:scale-98 cursor-pointer font-sans text-center mt-2"
+            >
+              {lang === 'zh' ? '保存更改' : 'Save Changes'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showLevelRules && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white rounded-[40px] p-6 sm:p-8 max-w-md w-full shadow-2xl relative text-left flex flex-col gap-5 animate-in zoom-in-95 duration-300 max-h-[85vh] overflow-y-auto scrollbar-thin">
+            <div className="absolute top-0 left-0 w-full h-1.5" style={{ background: `linear-gradient(to right, ${MorandiTheme.purple}, ${MorandiTheme.blue})` }} />
+            
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <h3 className="text-base font-bold text-slate-800 tracking-tight font-sans">
+                  {lang === 'zh' ? '等级与经验' : 'Level & EXP'}
+                </h3>
+                <p className="text-[10px] text-gray-400 font-medium">
+                  {lang === 'zh' ? '在知行合一中觉察心性、澄明见境' : 'See clearly and attain stability step by step'}
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowLevelRules(false)}
+                className="w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-all cursor-pointer focus:outline-none shrink-0"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* EXP Gain Rules */}
+            <div className="bg-[#FAF8FC] rounded-2xl p-4 space-y-3 border border-purple-100/30">
+              <h4 className="text-[10px] font-black text-[#8A70D6] tracking-widest uppercase font-sans flex items-center gap-1.5">
+                <Sparkles size={11} />
+                <span>{lang === 'zh' ? '经验值（EXP）计算规则' : 'EXP Earning Rules'}</span>
+              </h4>
+              
+              <div className="text-[9px] text-[#8670A8]/80 font-sans leading-relaxed space-y-1.5 mt-1">
+                <div className="flex items-start gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#8A70D6] mt-1 shrink-0"></span>
+                  <span><strong>{lang === 'zh' ? '记录日记 +15 EXP' : 'Write Diary +15 EXP'}</strong>：{lang === 'zh' ? '完成并保存每日哲学日记感悟。' : 'Complete and save a philosophical diary entry.'}</span>
+                </div>
+                <div className="flex items-start gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#8A70D6] mt-1 shrink-0"></span>
+                  <span><strong>{lang === 'zh' ? '使用工具 +10 EXP' : 'Use Tools +10 EXP'}</strong>：{lang === 'zh' ? '使用格物工具（理性决策分析、职场生存研究等）进行独立练习。' : 'Practice using rational decision table, career survival studies, etc.'}</span>
+                </div>
+                <div className="flex items-start gap-1.5 border-t border-purple-100/20 pt-1.5 mt-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#8A70D6] mt-1 shrink-0"></span>
+                  <span><strong>{lang === 'zh' ? '每日经验上限 100 EXP' : 'Daily Cap 100 EXP'}</strong>：{lang === 'zh' ? '通过日记和工具每天最多可积累 100 基础经验值。' : 'Daily limit for diary & tools is 100.'}</span>
+                </div>
+                <div className="flex items-start gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#8A70D6] mt-1 shrink-0"></span>
+                  <span><strong>{lang === 'zh' ? '成就加成' : 'Achievement Bonus'}</strong>：{lang === 'zh' ? '每解锁一个成就有额外经验加成，不占用每日上限。' : 'Earn bonus EXP per unlocked achievement. Bypasses daily cap.'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Level Milestones List */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 tracking-widest uppercase font-sans">
+                {lang === 'zh' ? '成长阶梯' : 'Growth Steps'}
+              </label>
+              
+              <div className="border border-gray-100 rounded-2xl overflow-hidden divide-y divide-gray-100 bg-slate-50/20">
+                <div className="grid grid-cols-12 bg-gray-50/75 p-2 px-3 text-[8px] font-bold text-gray-400 uppercase tracking-wider">
+                  <span className="col-span-3">{lang === 'zh' ? '级别' : 'Level'}</span>
+                  <span className="col-span-4 pl-1">{lang === 'zh' ? '称号' : 'Title'}</span>
+                  <span className="col-span-5">{lang === 'zh' ? '累计经验(差值)' : 'Req. EXP (Gap)'}</span>
+                </div>
+                
+                <div className="divide-y divide-gray-100 max-h-[220px] overflow-y-auto pr-0.5 animate-pulse-none">
+                  {LEVEL_MILESTONES.map((milestone) => {
+                    const isCurrent = levelInfo.level === milestone.level;
+                    return (
+                      <div 
+                        key={milestone.level} 
+                        className={`grid grid-cols-12 p-2 px-3 items-center text-[10px] transition-colors ${
+                          isCurrent ? 'bg-[#8A70D6]/5 font-bold' : 'hover:bg-gray-50/30'
+                        }`}
+                      >
+                        <div className="col-span-3 flex flex-col gap-0.5">
+                          <span 
+                            className="text-[7.5px] px-1.5 py-0.5 rounded-md font-sans font-bold tracking-tight w-fit text-center leading-none"
+                            style={{ 
+                              backgroundColor: isCurrent ? MorandiTheme.purple : `${MorandiTheme.purple}12`, 
+                              color: isCurrent ? '#FFFFFF' : MorandiTheme.purple 
+                            }}
+                          >
+                            Lv.{milestone.level}
+                          </span>
+                        </div>
+                        <div className="col-span-4 font-sans text-[9px] font-bold text-slate-700 pl-1">
+                          {lang === 'zh' ? milestone.titleZh : milestone.titleEn}
+                        </div>
+                        <div className="col-span-5 font-sans text-[9px] font-bold text-slate-600">
+                          {milestone.requiredExp} <span className="text-[7.5px] font-normal text-gray-400">EXP</span>
+                          {milestone.level > 1 && (
+                            <span className="text-[7.5px] text-purple-400 font-semibold block sm:inline sm:ml-1">
+                              (+{milestone.gap})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  
+                  <div className="grid grid-cols-12 p-2.5 px-3 items-center text-center bg-gray-50/30 border-t border-gray-100/50">
+                    <div className="col-span-12 text-[8.5px] text-gray-400 font-medium italic">
+                      ✨ {lang === 'zh' ? '更多级别待解锁' : 'More levels to be unlocked'} ✨
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Close button */}
+            <button 
+              onClick={() => setShowLevelRules(false)} 
+              className="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-2xl text-[10px] font-bold tracking-widest uppercase transition-all shadow-md active:scale-98 cursor-pointer font-sans text-center"
+            >
+              {lang === 'zh' ? '返回' : 'Back'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 const container = document.getElementById('root');
-const root = createRoot(container!);
-root.render(
-  <LanguageProvider>
-    <App />
-  </LanguageProvider>
-);
+if (container) {
+  let root = (window as any).__reactRoot;
+  if (!root) {
+    root = createRoot(container);
+    (window as any).__reactRoot = root;
+  }
+  root.render(
+    <LanguageProvider>
+      <App />
+    </LanguageProvider>
+  );
+}

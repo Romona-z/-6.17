@@ -1,5 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
+import { Sparkles } from 'lucide-react';
 import { Option, ProCon, Dimension } from '../types';
 import { getAISuggestions } from '../services/geminiService';
 import { useLanguage } from './LanguageContext';
@@ -102,24 +103,30 @@ const OptionAnalysis: React.FC<Props> = ({ problem, option, dimensions, onUpdate
 
   const handleAIHelp = async () => {
     setLoading(true);
-    const suggestions = await getAISuggestions(problem, option.title);
-    const newPros = suggestions.pros.map((p: string) => ({
-      id: Math.random().toString(36).substr(2, 9),
-      text: p,
-      score: 0
-    }));
-    const newCons = suggestions.cons.map((c: string) => ({
-      id: Math.random().toString(36).substr(2, 9),
-      text: c,
-      score: 0
-    }));
+    try {
+      const suggestions = await getAISuggestions(problem, option.title);
+      const newPros = suggestions.pros.map((p: string) => ({
+        id: Math.random().toString(36).substr(2, 9),
+        text: p,
+        score: 0
+      }));
+      const newCons = suggestions.cons.map((c: string) => ({
+        id: Math.random().toString(36).substr(2, 9),
+        text: c,
+        score: 0
+      }));
 
-    onUpdate({
-      ...option,
-      pros: [...option.pros, ...newPros],
-      cons: [...option.cons, ...newCons]
-    });
-    setLoading(false);
+      onUpdate({
+        ...option,
+        pros: [...option.pros, ...newPros],
+        cons: [...option.cons, ...newCons]
+      });
+    } catch (err: any) {
+      console.error("AI Help failed", err);
+      alert(err.message || "获取 AI 建议失败，请检查您的 API Key 或网络。");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -129,9 +136,23 @@ const OptionAnalysis: React.FC<Props> = ({ problem, option, dimensions, onUpdate
         <button 
           onClick={handleAIHelp}
           disabled={loading}
-          className="text-sm px-5 py-2 bg-white/80 text-indigo-500 rounded-full shadow-sm hover:shadow-md transition-all flex items-center gap-2 whitespace-nowrap"
+          className={`text-xs font-bold tracking-wider px-5 py-2.5 rounded-full shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center gap-2 whitespace-nowrap border ${
+            loading 
+              ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' 
+              : 'bg-gradient-to-r from-purple-500/10 to-indigo-500/10 hover:from-purple-500/20 hover:to-indigo-500/20 text-purple-600 border-purple-200/80 hover:border-purple-300/80'
+          }`}
         >
-          {loading ? t('思考中...') : t('✨ AI 辅助深度分析')}
+          {loading ? (
+            <>
+              <div className="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-500 rounded-full animate-spin"></div>
+              {t('思考中...')}
+            </>
+          ) : (
+            <>
+              <Sparkles size={14} className="text-purple-500 animate-pulse" />
+              {t('澄的回响')}
+            </>
+          )}
         </button>
       </div>
 

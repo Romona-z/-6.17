@@ -851,7 +851,15 @@ const WorkplaceSurvival: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const handleRunAnalysis = async () => {
     if (logs.length < 3) { showAlert("无法分析", "请至少记录3篇日志后再进行周期分析。"); return; }
     setIsAnalyzing(true);
-    try { const result = await generatePeriodicAnalysis(logs, subjects, subjectReflections); setAnalysisResult(result); } catch (err) { console.error("Analysis failed", err); } finally { setIsAnalyzing(false); }
+    try { 
+      const result = await generatePeriodicAnalysis(logs, subjects, subjectReflections); 
+      setAnalysisResult(result); 
+    } catch (err: any) { 
+      console.error("Analysis failed", err); 
+      showAlert("分析失败", err.message || "由于未知错误，周期洞察分析失败。请检查您的 API Key 或者是网络配置。");
+    } finally { 
+      setIsAnalyzing(false); 
+    }
   };
 
   const getSubjectAlias = (id: string, log?: WorkLog) => {

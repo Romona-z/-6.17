@@ -1,17 +1,23 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Radar, RadarChart, PolarGrid, PolarAngleAxis } from 'recharts';
+import { Sparkles, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Option, Dimension } from '../types';
 import { useLanguage } from './LanguageContext';
+import { generateDecisionFeedback } from '../services/geminiService';
 
 interface Props {
   options: Option[];
   dimensions: Dimension[];
+  problem: string;
   onNavigateToDimensions?: () => void;
 }
 
-const ResultDashboard: React.FC<Props> = ({ options, dimensions, onNavigateToDimensions }) => {
+const ResultDashboard: React.FC<Props> = ({ options, dimensions, problem, onNavigateToDimensions }) => {
   const { t } = useLanguage();
+  const [feedbackText, setFeedbackText] = useState<string>('');
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [errorMsg, setErrorMsg] = useState<string>('');
+  const [enableAiFeedback, setEnableAiFeedback] = useState<boolean>(false);
 
   const getWeightedScore = (opt: Option) => {
     const pSum = opt.pros.reduce((acc, p) => acc + (p.score * (dimensions.find(d => d.id === p.dimensionId)?.weight || 1)), 0);
@@ -37,6 +43,61 @@ const ResultDashboard: React.FC<Props> = ({ options, dimensions, onNavigateToDim
       fullMark: 100 * dim.weight,
     };
   });
+
+  // Stabilize dependencies by JSON-serializing stable aspects of state
+  const memoKey = JSON.stringify({
+    problem,
+    optionIds: options.map(o => o.id),
+    optionTitles: options.map(o => o.title),
+    optionScores: options.map(o => getWeightedScore(o)),
+    dimensions: dimensions.map(d => ({ id: d.id, weight: d.weight }))
+  });
+
+  const loadFeedback = async () => {
+    if (!enableAiFeedback) return;
+    setIsGenerating(true);
+    setErrorMsg('');
+    try {
+      const text = await generateDecisionFeedback(problem, options, dimensions);
+      setFeedbackText(text);
+    } catch (err: any) {
+      console.error("Failed to generate decision feedback:", err);
+      setErrorMsg(err.message || t('生成 AI 反馈失败，请检查您的 API Key 或网络。'));
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!enableAiFeedback) {
+      return;
+    }
+    let active = true;
+    const fetchFeedback = async () => {
+      setIsGenerating(true);
+      setErrorMsg('');
+      try {
+        const text = await generateDecisionFeedback(problem, options, dimensions);
+        if (active) {
+          setFeedbackText(text);
+        }
+      } catch (err: any) {
+        console.error("Failed to generate decision feedback:", err);
+        if (active) {
+          setErrorMsg(err.message || t('生成 AI 反馈失败，请检查您的 API Key 或网络。'));
+        }
+      } finally {
+        if (active) {
+          setIsGenerating(false);
+        }
+      }
+    };
+
+    fetchFeedback();
+    return () => {
+      active = false;
+    };
+  }, [memoKey, enableAiFeedback]);
 
   return (
     <div className="space-y-12 animate-in fade-in duration-1000 pb-20">
@@ -131,12 +192,55 @@ const ResultDashboard: React.FC<Props> = ({ options, dimensions, onNavigateToDim
         </div>
       </div>
 
-      <div className="p-8 md:p-12 bg-white/40 backdrop-blur-sm rounded-[3rem] border border-white/60 text-center overflow-hidden">
-        <div className="w-16 h-1 bg-slate-200 mx-auto mb-8 rounded-full"></div>
-        <p className="text-slate-500 italic text-sm max-w-xl mx-auto leading-relaxed">
-          “{t('理性的选择不是寻找完美，而是在所有不完美的路径中，找到最符合你当下价值观的那一条。')}”
-        </p>
-        <p className="text-slate-400 text-xs mt-4 leading-relaxed">
+      {/* AI Feedback Section */}
+      <div className="p-8 md:p-12 bg-white/60 backdrop-blur-md rounded-[3rem] border border-white shadow-sm text-center overflow-hidden flex flex-col items-center">
+        <div className="text-xs font-bold uppercase tracking-[0.4em] mb-4 text-[#7E8AB5]">{t('人生选择器 · 决策报告反馈')}</div>
+        <div className="w-16 h-1 bg-slate-100 mb-8 rounded-full"></div>
+
+        {/* Content Area */}
+        <div className="min-h-[80px] flex items-center justify-center w-full">
+          {!enableAiFeedback ? (
+            <p className="text-slate-600 font-medium text-sm max-w-xl mx-auto leading-relaxed italic">
+              “{t('理性的选择不是寻找完美，而是在所有不完美的路径中，找到最符合你当下价值观的那一条。')}”
+            </p>
+          ) : isGenerating ? (
+            <div className="flex flex-col items-center justify-center space-y-3 py-6">
+              <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-slate-400 text-xs font-medium">{t('AI 见证者正在凝视你的决策过程...')}</p>
+            </div>
+          ) : errorMsg ? (
+            <div className="text-center py-4">
+              <p className="text-red-400 text-sm mb-4">{errorMsg}</p>
+              <button 
+                onClick={loadFeedback} 
+                className="px-6 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-bold rounded-xl text-xs transition-all cursor-pointer"
+              >
+                {t('重新生成')}
+              </button>
+            </div>
+          ) : (
+            <p className="text-slate-600 font-medium text-sm max-w-xl mx-auto leading-relaxed whitespace-pre-wrap">
+              {feedbackText}
+            </p>
+          )}
+        </div>
+
+        {/* Toggle Switch */}
+        <div className="flex items-center gap-4 py-2 px-6 rounded-full bg-white/60 border border-white/80 shadow-sm transition-all hover:bg-white/80 mt-8">
+          <div className="flex items-center gap-3">
+            <Sparkles size={14} className={enableAiFeedback ? '' : 'grayscale opacity-30'} style={{ color: enableAiFeedback ? '#805AD5' : 'inherit' }} />
+            <span className="text-[10px] font-bold opacity-40 tracking-widest uppercase">{t("澄的回响")}</span>
+          </div>
+          <button 
+            onClick={() => setEnableAiFeedback(!enableAiFeedback)} 
+            className="transition-colors focus:outline-none"
+            style={{color: enableAiFeedback ? '#805AD5' : '#D1D5DB'}}
+          >
+            {enableAiFeedback ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+          </button>
+        </div>
+
+        <p className="text-slate-400 text-xs mt-8 border-t border-slate-100 pt-6 w-full leading-relaxed">
           {t('这个报告基于你对')} <b>{dimensions.length} {t('个价值维度')}</b> {t('的权重定义。如果结果令你惊讶，请回到')}
           <button 
             onClick={onNavigateToDimensions}

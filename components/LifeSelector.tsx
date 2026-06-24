@@ -78,6 +78,33 @@ const LifeSelector: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }
   }, [currentStep, state]);
 
+  const handleStepClick = (stepIdx: number) => {
+    if (stepIdx === Step.RESULT) {
+      const invalidSteps: string[] = [];
+      if (!checkStepValid(Step.PROBLEM)) invalidSteps.push(t('明确问题'));
+      if (!checkStepValid(Step.OPTIONS)) invalidSteps.push(t('列出方案'));
+      if (!checkStepValid(Step.ANALYSIS)) invalidSteps.push(t('利弊发散'));
+      if (!checkStepValid(Step.DIMENSIONS)) invalidSteps.push(t('价值建模'));
+      if (!checkStepValid(Step.LINKING)) invalidSteps.push(t('关联维度'));
+      
+      if (invalidSteps.length > 0) {
+        alert(`${t('请先完成以下步骤以生成决策报告')}:\n${invalidSteps.map(s => `• ${s}`).join('\n')}`);
+        return;
+      }
+    }
+    
+    if (currentStep === Step.ANALYSIS) {
+      const cleanedOptions = state.options.map(o => ({
+        ...o,
+        pros: o.pros.filter(p => p.text.trim().length > 0),
+        cons: o.cons.filter(c => c.text.trim().length > 0)
+      }));
+      setState(prev => ({ ...prev, options: cleanedOptions }));
+    }
+    
+    setCurrentStep(stepIdx as Step);
+  };
+
   const nextStep = () => {
     if (currentStep === Step.ANALYSIS) {
       // Clean up empty pros/cons
@@ -88,7 +115,12 @@ const LifeSelector: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       }));
       setState(prev => ({ ...prev, options: cleanedOptions }));
     }
-    setCurrentStep(prev => Math.min(prev + 1, Step.RESULT));
+    
+    if (currentStep === Step.SCORING) {
+      handleStepClick(Step.RESULT);
+    } else {
+      setCurrentStep(prev => Math.min(prev + 1, Step.RESULT));
+    }
   };
   const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, Step.PROBLEM));
 
@@ -99,23 +131,56 @@ const LifeSelector: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }));
   };
 
-  const isStepValid = () => {
-    if (currentStep === Step.PROBLEM) return state.problem.trim().length > 0;
-    if (currentStep === Step.OPTIONS) return state.options.length >= 2 && state.options.every(o => o.title.trim().length > 0);
-    if (currentStep === Step.ANALYSIS) {
+  const checkStepValid = (step: Step) => {
+    if (step === Step.PROBLEM) return state.problem.trim().length > 0;
+    if (step === Step.OPTIONS) {
+      const isOptionsCustomized = state.options.length > 2 || state.options.some(o => {
+        const t_title = o.title.trim();
+        return t_title !== '' && 
+               t_title !== '方案 A' && 
+               t_title !== '方案 B' && 
+               t_title !== '方案A' && 
+               t_title !== '方案B' && 
+               t_title !== '新方案' &&
+               t_title !== 'Option A' &&
+               t_title !== 'Option B' &&
+               t_title !== 'New Option';
+      });
+      return state.options.length >= 2 && isOptionsCustomized && state.options.every(o => o.title.trim().length > 0);
+    }
+    if (step === Step.ANALYSIS) {
       // Must have written at least one pro or con text in any option
       return state.options.some(o => 
         o.pros.some(p => p.text.trim().length > 0) || 
         o.cons.some(c => c.text.trim().length > 0)
       );
     }
-    if (currentStep === Step.DIMENSIONS) return state.dimensions.length > 0;
-    if (currentStep === Step.LINKING) {
-      return state.options.every(o => 
+    if (step === Step.DIMENSIONS) {
+      const isDimensionsCustomized = state.dimensions.length !== DEFAULT_DIMENSIONS.length || 
+        state.dimensions.some((d, idx) => {
+          const def = DEFAULT_DIMENSIONS[idx];
+          return !def || d.weight !== 1 || d.name !== def.name;
+        });
+      return state.dimensions.length > 0 && isDimensionsCustomized;
+    }
+    if (step === Step.LINKING) {
+      if (!checkStepValid(Step.ANALYSIS)) return false;
+      const validOptions = state.options.map(o => ({
+        pros: o.pros.filter(p => p.text.trim().length > 0),
+        cons: o.cons.filter(c => c.text.trim().length > 0)
+      }));
+      return validOptions.every(o => 
         o.pros.every(p => !!p.dimensionId) && o.cons.every(c => !!c.dimensionId)
       );
     }
+    if (step === Step.SCORING) {
+      return [Step.PROBLEM, Step.OPTIONS, Step.ANALYSIS, Step.DIMENSIONS, Step.LINKING].every(s => checkStepValid(s));
+    }
     return true;
+  };
+
+  const isStepValid = () => {
+    return checkStepValid(currentStep);
   };
 
   // Render selected history item detail
@@ -158,6 +223,7 @@ const LifeSelector: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         <ResultDashboard 
           options={selectedHistoryItem.options} 
           dimensions={selectedHistoryItem.dimensions} 
+          problem={selectedHistoryItem.problem}
           onNavigateToDimensions={() => {}} 
         />
       </div>
@@ -304,9 +370,7 @@ const LifeSelector: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       </header>
 
       {/* Main Workspace Frame */}
-      <div className={`flex-1 min-h-0 flex flex-col items-center pt-6 px-4 max-w-4xl mx-auto w-full md:px-8 md:order-last ${
-        isProblemStep ? 'pb-24' : 'pb-52'
-      }`}>
+      <div className="flex-1 min-h-0 flex flex-col items-center pt-6 px-4 max-w-4xl mx-auto w-full md:px-8 md:order-last pb-52">
         {selectedHistoryItem ? (
           renderSelectedHistoryItem()
         ) : activeView === 'history' ? (
@@ -324,10 +388,14 @@ const LifeSelector: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 <div className="absolute top-1/2 left-0 w-full h-[1px] bg-slate-200 -z-10" />
                 {STEPS.map((step, idx) => {
                   const isActive = idx === currentStep;
-                  const isCompleted = idx < currentStep;
+                  const isCompleted = checkStepValid(idx) && idx < currentStep;
                   
                   return (
-                    <div key={idx} className="flex flex-col items-center relative">
+                    <div 
+                      key={idx} 
+                      onClick={() => handleStepClick(idx)} 
+                      className="flex flex-col items-center relative cursor-pointer group select-none"
+                    >
                       <motion.div 
                         initial={false}
                         animate={{
@@ -338,8 +406,8 @@ const LifeSelector: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                           borderColor: isActive ? '#7E8AB5' : isCompleted ? '#EEF2FF' : '#F1F5F9',
                         }}
                         transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs shadow-sm border ${
-                          isActive ? 'shadow-xl' : ''
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs shadow-sm border transition-all duration-200 ${
+                          isActive ? 'shadow-xl' : 'group-hover:scale-110 group-hover:border-[#7E8AB5]/60'
                         }`}
                       >
                         {isCompleted ? '✓' : idx + 1}
@@ -374,132 +442,144 @@ const LifeSelector: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             </div>
 
             {/* Step Wizard Content Area */}
-            <main className={`w-full max-w-4xl mt-4 ${
-              isProblemStep ? 'min-h-0' : 'min-h-[500px]'
-            }`}>
-              {currentStep === Step.PROBLEM && (
-                <div className="bg-white/70 backdrop-blur-lg p-8 md:p-16 rounded-[3rem] shadow-xl border border-white text-center animate-in zoom-in-95 duration-500">
-                  <h2 className="text-3xl font-black text-Slate-800 mb-8">{t('你的难题是什么？')}</h2>
-                  <textarea
-                    className="w-full text-2xl px-4 py-3 bg-transparent border-b-2 border-slate-100 focus:border-[#7E8AB5] outline-none transition-all font-bold text-center placeholder:text-slate-200 resize-none h-32"
-                    placeholder={t('例如：我现在该跳槽还是自己创业')}
-                    value={state.problem}
-                    onChange={(e) => setState(prev => ({ ...prev, problem: e.target.value }))}
-                  />
-                  <p className="mt-6 text-sm text-slate-400">{t('用直白的一句话描述你当前最大的纠结。')}</p>
-                </div>
-              )}
+            <main className="w-full max-w-4xl mt-4 min-h-[500px]">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentStep}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                  className="w-full h-full"
+                >
+                  {currentStep === Step.PROBLEM && (
+                    <div className="bg-white/70 backdrop-blur-lg p-8 md:p-16 rounded-[3rem] shadow-xl border border-white text-center">
+                      <h2 className="text-3xl font-black text-slate-800 mb-8">{t('你的难题是什么？')}</h2>
+                      <textarea
+                        className="w-full text-2xl px-4 py-3 bg-transparent border-b-2 border-slate-100 focus:border-[#7E8AB5] outline-none transition-all font-bold text-center placeholder:text-slate-200 resize-none h-32"
+                        placeholder={t('例如：我现在该跳槽还是自己创业')}
+                        value={state.problem}
+                        onChange={(e) => setState(prev => ({ ...prev, problem: e.target.value }))}
+                      />
+                      <p className="mt-6 text-sm text-slate-400">{t('用直白的一句话描述你当前最大的纠结。')}</p>
+                    </div>
+                  )}
 
-              {currentStep === Step.OPTIONS && (
-                <div className="space-y-6 animate-in fade-in duration-500">
-                  <h2 className="text-2xl font-black text-slate-700 text-center mb-8">{t('可以选择的路')}</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {state.options.map((opt, idx) => (
-                      <div key={opt.id} className="bg-white/80 backdrop-blur-sm p-8 rounded-3xl shadow-sm border border-white flex flex-col gap-4 text-left">
-                        <span className="text-[10px] font-black text-slate-300 uppercase">{t('方案')} {idx + 1}</span>
-                        <input
-                          className="text-xl font-black outline-none bg-transparent text-slate-600 focus:text-[#7E8AB5] truncate"
-                          value={opt.title === '方案 A' || opt.title === '方案 B' || opt.title === '新方案' ? t(opt.title) : opt.title}
-                          onChange={(e) => updateOption(opt.id, { ...opt, title: e.target.value })}
-                          onFocus={() => {
-                            const trimmed = opt.title.trim();
-                            if (['方案 A', '方案 B', '方案A', '方案B', '新方案'].includes(trimmed)) {
-                              updateOption(opt.id, { ...opt, title: '' });
-                            }
-                          }}
-                        />
-                        <button onClick={() => setState(p => ({...p, options: p.options.filter(o => o.id !== opt.id)}))} className="text-left text-xs text-red-300 hover:text-red-500 transition-colors">{t('移除此方案')}</button>
+                  {currentStep === Step.OPTIONS && (
+                    <div className="space-y-6">
+                      <h2 className="text-2xl font-black text-slate-700 text-center mb-8">{t('可以选择的路')}</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {state.options.map((opt, idx) => (
+                          <div key={opt.id} className="bg-white/80 backdrop-blur-sm p-8 rounded-3xl shadow-sm border border-white flex flex-col gap-4 text-left">
+                            <span className="text-[10px] font-black text-slate-300 uppercase">{t('方案')} {idx + 1}</span>
+                            <input
+                              className="text-xl font-black outline-none bg-transparent text-slate-600 focus:text-[#7E8AB5] truncate"
+                              value={opt.title === '方案 A' || opt.title === '方案 B' || opt.title === '新方案' ? t(opt.title) : opt.title}
+                              onChange={(e) => updateOption(opt.id, { ...opt, title: e.target.value })}
+                              onFocus={() => {
+                                const trimmed = opt.title.trim();
+                                if (['方案 A', '方案 B', '方案A', '方案B', '新方案'].includes(trimmed)) {
+                                  updateOption(opt.id, { ...opt, title: '' });
+                                }
+                              }}
+                            />
+                            {state.options.length > 2 && (
+                              <button onClick={() => setState(p => ({...p, options: p.options.filter(o => o.id !== opt.id)}))} className="text-left text-xs text-red-300 hover:text-red-400 transition-colors">{t('移除此方案')}</button>
+                            )}
+                          </div>
+                        ))}
+                        <button 
+                          onClick={() => setState(p => ({
+                            ...p, 
+                            options: [
+                              ...p.options, 
+                              {
+                                id: Date.now().toString(), 
+                                title: '新方案', 
+                                pros: [{ id: 'p-' + Math.random().toString(36).substr(2, 9), text: '', score: 0 }], 
+                                cons: [{ id: 'c-' + Math.random().toString(36).substr(2, 9), text: '', score: 0 }]
+                              }
+                            ]
+                          }))}
+                          className="p-8 rounded-3xl border-2 border-dashed border-slate-200 text-slate-400 font-black hover:border-[#7E8AB5] hover:text-[#7E8AB5] transition-all"
+                        >
+                          {t('+ 添加新路径')}
+                        </button>
                       </div>
-                    ))}
-                    <button 
-                      onClick={() => setState(p => ({
-                        ...p, 
-                        options: [
-                          ...p.options, 
-                          {
-                            id: Date.now().toString(), 
-                            title: '新方案', 
-                            pros: [{ id: 'p-' + Math.random().toString(36).substr(2, 9), text: '', score: 0 }], 
-                            cons: [{ id: 'c-' + Math.random().toString(36).substr(2, 9), text: '', score: 0 }]
-                          }
-                        ]
-                      }))}
-                      className="p-8 rounded-3xl border-2 border-dashed border-slate-200 text-slate-400 font-black hover:border-[#7E8AB5] hover:text-[#7E8AB5] transition-all"
-                    >
-                      {t('+ 添加新路径')}
-                    </button>
-                  </div>
-                </div>
-              )}
+                    </div>
+                  )}
 
-              {currentStep === Step.ANALYSIS && (
-                <div className="animate-in fade-in duration-500 text-left">
-                  <div className="mb-10 text-center">
-                    <h2 className="text-2xl font-black text-slate-700">{t('利弊发散')}</h2>
-                    <p className="text-sm text-slate-400 mt-2 truncate">{t('问题：')}{state.problem}</p>
-                    <p className="text-xs text-slate-300 mt-1">{t('请尽可能多的列出每种方案的好处及坏处')}</p>
-                  </div>
-                  {state.options.map(opt => (
-                    <OptionAnalysis 
-                      key={opt.id}
+                  {currentStep === Step.ANALYSIS && (
+                    <div className="text-left">
+                      <div className="mb-10 text-center">
+                        <h2 className="text-2xl font-black text-slate-700">{t('利弊发散')}</h2>
+                        <p className="text-sm text-slate-400 mt-2 truncate">{t('问题：')}{state.problem}</p>
+                        <p className="text-xs text-slate-300 mt-1">{t('请尽可能多的列出每种方案的好处及坏处')}</p>
+                      </div>
+                      {state.options.map(opt => (
+                        <OptionAnalysis 
+                          key={opt.id}
+                          problem={state.problem}
+                          option={opt}
+                          dimensions={state.dimensions}
+                          onUpdate={(updated) => updateOption(opt.id, updated)}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {currentStep === Step.DIMENSIONS && (
+                    <div className="text-left">
+                      <DimensionGuide />
+                      <DimensionConfig 
+                        dimensions={state.dimensions} 
+                        onUpdate={(dims) => setState(p => ({...p, dimensions: dims}))} 
+                      />
+                    </div>
+                  )}
+
+                  {currentStep === Step.LINKING && (
+                    <div className="text-left">
+                      <div className="mb-10 text-center">
+                        <h2 className="text-2xl font-black text-slate-700">{t('关联评估维度')}</h2>
+                        <p className="text-sm text-slate-400 mt-2">{t('将刚才列出的好处与代价归纳到相应的价值维度中')}</p>
+                      </div>
+                      {state.options.map(opt => (
+                        <OptionLinking 
+                          key={opt.id}
+                          option={opt}
+                          dimensions={state.dimensions}
+                          onUpdate={(updated) => updateOption(opt.id, updated)}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {currentStep === Step.SCORING && (
+                    <div className="text-center">
+                      <ScoringGuide />
+                      <h2 className="text-2xl font-black text-slate-700 mb-10">{t('分值量化与权重映射')}</h2>
+                      {state.options.map(opt => (
+                        <OptionScoring 
+                          key={opt.id}
+                          option={opt}
+                          dimensions={state.dimensions}
+                          onUpdate={(updated) => updateOption(opt.id, updated)}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {currentStep === Step.RESULT && (
+                    <ResultDashboard 
+                      options={state.options} 
+                      dimensions={state.dimensions} 
                       problem={state.problem}
-                      option={opt}
-                      dimensions={state.dimensions}
-                      onUpdate={(updated) => updateOption(opt.id, updated)}
+                      onNavigateToDimensions={() => setCurrentStep(Step.DIMENSIONS)} 
                     />
-                  ))}
-                </div>
-              )}
-
-              {currentStep === Step.DIMENSIONS && (
-                <div className="animate-in fade-in duration-505 text-left">
-                  <DimensionGuide />
-                  <DimensionConfig 
-                    dimensions={state.dimensions} 
-                    onUpdate={(dims) => setState(p => ({...p, dimensions: dims}))} 
-                  />
-                </div>
-              )}
-
-              {currentStep === Step.LINKING && (
-                <div className="animate-in fade-in duration-500 text-left">
-                  <div className="mb-10 text-center">
-                    <h2 className="text-2xl font-black text-slate-700">{t('关联评估维度')}</h2>
-                    <p className="text-sm text-slate-400 mt-2">{t('将刚才列出的好处与代价归纳到相应的价值维度中')}</p>
-                  </div>
-                  {state.options.map(opt => (
-                    <OptionLinking 
-                      key={opt.id}
-                      option={opt}
-                      dimensions={state.dimensions}
-                      onUpdate={(updated) => updateOption(opt.id, updated)}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {currentStep === Step.SCORING && (
-                <div className="animate-in fade-in duration-500 text-center">
-                  <ScoringGuide />
-                  <h2 className="text-2xl font-black text-slate-700 mb-10">{t('分值量化与权重映射')}</h2>
-                  {state.options.map(opt => (
-                    <OptionScoring 
-                      key={opt.id}
-                      option={opt}
-                      dimensions={state.dimensions}
-                      onUpdate={(updated) => updateOption(opt.id, updated)}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {currentStep === Step.RESULT && (
-                <ResultDashboard 
-                  options={state.options} 
-                  dimensions={state.dimensions} 
-                  onNavigateToDimensions={() => setCurrentStep(Step.DIMENSIONS)} 
-                />
-              )}
+                  )}
+                </motion.div>
+              </AnimatePresence>
             </main>
 
             {/* Solid uncollapsible spacer block to ensure the bottommost elements of Step 3 (like Option B's cost list) can scroll completely above the fixed action footer */}
